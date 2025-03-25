@@ -1,0 +1,38 @@
+universe = vanilla
+
+# executable must be in submission folder
+# --> updated automatically by spawn.sh <--
+executable = job.sh
+# list of arguments to executable (empty is accepted)
+arguments =
+# run folder is a sub-folder of the submission folder:
+#   there, HTCondor will find input files
+initialdir = $(MyRunFolder)
+
+# ask to transfer files (YES/NO) whenever the filesystem is NOT shared
+should_transfer_files = YES
+# list input files to transfer, eg transfer_input_files=file1,file2,file3
+transfer_input_files = VIF_exp.inp
+# list the ONLY output files to transfer, eg ttransfer_output_files=file1,file2,file3
+# NB: if line is NOT found, then all generated/updated files are transferred back
+# transfer_output_files = 
+when_to_transfer_output = ON_EXIT
+
+# run job as owner, such that you can ssh to job
+run_as_owner = TRUE
+
+# if initialdir is specified, these files will be in-there
+log = htcondor.log
+output = htcondor.out
+error = htcondor.err
+
+request_cpus = 1
+request_disk = 200MB
+request_memory = 2GB
+
+# --> updated automatically by spawn.sh <--
+JobBatchName = "FlukaTestCondor"
+
+# --> HTCjobList.txt file created automatically by spawn.sh <--
+queue myRunFolder from HTCjobList.txt
+# queue myRunFolder matching dirs run_0????

@@ -4,14 +4,13 @@
 # this is a template batch job file
 
 RunFolder=$HOME
+cd ${RunFolder}
 
 # start batch job
-echo " starting job at `date`..."
-cd ${RunFolder}
+echo " starting job at `date` in folder $PWD as $USER on `hostname`..."
 
 # --------------------------------------
 # actual simulation job
-echo " ...running in $PWD as $USER ..." 
 for ((ii=1;ii<=1200;ii++)); do
     echo "Hello world! ${ii}"
     sleep 1

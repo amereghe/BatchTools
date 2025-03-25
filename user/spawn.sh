@@ -377,7 +377,7 @@ EOF
             chmod +x ${dirNum}/${currJobFile}
         elif [ "${batchSys}" == "HTC" ] ; then
             echo ${dirNum} >> HTCjobList.txt
-            rm ${dirNum}/${condorSubFile}
+            rm ${dirNum}/${condorSubFile} ${dirNum}/HTCjobList.txt
         fi
     done
     if [ "${batchSys}" == "HTC" ] ; then

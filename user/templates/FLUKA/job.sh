@@ -14,6 +14,7 @@ echo " starting job at `date` in folder $PWD as $USER on `hostname`..."
 for inputFile in `ls -1 *.inp` ; do
         echo "running command: ${FLUKA}/flutil/rfluka -e ${FLUKAexe} -N${NN} -M${MM} ${inputFile%.inp}"
         ${FLUKA}/flutil/rfluka -e ${FLUKAexe} -N${NN} -M${MM} ${inputFile%.inp}
+        gzip ${inputFile%.inp}???.err ${inputFile%.inp}???.out ${inputFile%.inp}???.log
 done
 
 # post-processing (modify this part according to your needs)

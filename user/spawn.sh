@@ -410,7 +410,7 @@ EOF
         for addFile in ${addFiles[@]} ; do
             transfer_input_files="${transfer_input_files},${addFile}"
         done
-        sed -i "s#^transfer_input_files.*#transfer_input_files = \"${transfer_input_files}\"#g" ${condorSubFile}
+        sed -i "s#^transfer_input_files.*#transfer_input_files = ${transfer_input_files}#g" ${condorSubFile}
     fi
     cd - > /dev/null 2>&1
 fi

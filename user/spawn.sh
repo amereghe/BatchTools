@@ -11,6 +11,7 @@ seedMin=0
 seedMax=9
 wherePST="run_%05i"
 whereGM="run_?????"
+addFiles=""
 # what to do
 lPrepare=false
 lExpand=false
@@ -31,7 +32,7 @@ condorSubFile="condor.sub"
 # log file
 logFile=.`basename $0`.log
 # script version
-scriptVer="1.1"
+scriptVer="1.2"
 
 currDir=$PWD
 # use "." as floating-point separator
@@ -119,6 +120,7 @@ cat <<EOF
                       to add statistics to an existing study case, please see the
                         -E action;
                       available options:
+                      -a <addFile>   (optional)
                       -b <batchSys>  (optional)
                       -c <caseDir>   (mandatory)
 		      -i <inputFile> (mandatory)
@@ -147,6 +149,12 @@ cat <<EOF
 
 
        options:
+
+       -a <addFile>   additional file (common to all sub-folders of the study case)
+                      Each additional file will be copied in the study folder, and
+                        each running folder will have a link to it.
+                      Please give a -a option for every additional file
+       	  	      --> default: no additional file
 
        -b <batchSys>  batch system to be used for crunching jobs
        	  	      --> default: ${batchSys};
@@ -197,8 +205,11 @@ EOF
 # ==============================================================================
 
 # get options
-while getopts  ":b:Cc:EGHhi:j:Mm:n:o:Pp:Ss:Tu:w:" opt ; do
+while getopts  ":a:b:Cc:EGHhi:j:Mm:n:o:Pp:Ss:Tu:w:" opt ; do
   case $opt in
+    a)
+      addFiles="${addFiles} $OPTARG"
+      ;;
     b)
       batchSys=$OPTARG
       ;;
@@ -320,6 +331,14 @@ fi
 if ${lGrepStats} || ${lMerge} ; then
     if [ -z "${whereGM}" ] ; then die "please provide a meaningful -w option!" ; fi
 fi
+# - additional files
+if [ -n "${addFiles}" ] ; then
+    addFiles=( ${addFiles} )
+    # check existence
+    for addFile in ${addFiles[@]} ; do
+        if ! [ -e "${addFile}" ] ; then die "${addFile} does NOT exist!" ; fi
+    done
+fi
 
 # ==============================================================================
 # DO THINGs
@@ -337,6 +356,9 @@ if ${lPrepare} ; then
     # copy files
     cd ${origDir}
     cp ${inputFile} ${jobFile} ${currDir}/${caseDir}
+    for addFile in ${addFiles[@]} ; do
+        cp ${addFile} ${currDir}/${caseDir}
+    done
     # update number of primaries
     sed -i "s/^START.*/START     `printf "%10.1f" "${nPrims}"`/g" ${currDir}/${caseDir}/${inputFile}
     if [ "${batchSys}" == "HTC" ] ; then
@@ -362,7 +384,10 @@ if ${lPrepare} || ${lExpand} ; then
             rm -rf ${dirNum}
         fi
         mkdir ${dirNum}
-        cp *.* ${dirNum}
+        cp ${inputFile} ${jobFile} ${dirNum}
+        for addFile in ${addFiles[@]} ; do
+            ln -s ../${addFile} ${dirNum}/${addFile}
+        done
         # random seed
         sed -i "s/^RANDOMIZ.*/RANDOMIZ         1.0`printf "%10.1f" "${iSeed}"`/g" ${dirNum}/${inputFile}
         # number of primaries
@@ -377,11 +402,15 @@ EOF
             chmod +x ${dirNum}/${currJobFile}
         elif [ "${batchSys}" == "HTC" ] ; then
             echo ${dirNum} >> HTCjobList.txt
-            rm ${dirNum}/${condorSubFile} ${dirNum}/HTCjobList.txt
         fi
     done
     if [ "${batchSys}" == "HTC" ] ; then
         sed -i "s/^JobBatchName.*/JobBatchName = \"${caseDir}\"/g" ${condorSubFile}
+        transfer_input_files="${inputFile}"
+        for addFile in ${addFiles[@]} ; do
+            transfer_input_files="${transfer_input_files},${addFile}"
+        done
+        sed -i "s#^transfer_input_files.*#transfer_input_files = \"${transfer_input_files}\"#g" ${condorSubFile}
     fi
     cd - > /dev/null 2>&1
 fi

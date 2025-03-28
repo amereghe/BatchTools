@@ -12,6 +12,7 @@ initialdir = $(MyRunFolder)
 # ask to transfer files (YES/NO) whenever the filesystem is NOT shared
 should_transfer_files = YES
 # list input files to transfer, eg transfer_input_files=file1,file2,file3
+# --> updated automatically by spawn.sh <--
 transfer_input_files = VIF_exp.inp
 # list the ONLY output files to transfer, eg ttransfer_output_files=file1,file2,file3
 # NB: if line is NOT found, then all generated/updated files are transferred back

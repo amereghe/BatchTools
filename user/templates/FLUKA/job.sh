@@ -1,14 +1,14 @@
 #!/bin/bash
 
-export FLUPRO=/usr/local/FLUKA_INFN/2024.1.3
+export FLUPRO=/usr/local/FLUKA/INFN/2024.1.3
 export FLUKA=${FLUPRO}
 export FLUFOR=gfortran
-FLUKAexe=${FLUPRO}/flukahp
+FLUKAexe=/home/amereghe/Desktop/VirtualIrradiationFacility/FLUKAroutines/fluka.exe
 NN=0
 MM=1
 
 # start job
-echo " starting job at `date` in folder $PWD as $USER on `hostname`..."
+echo " starting job at `date` in folder `pwd` as `whoami` on `hostname`..."
 
 # run
 for inputFile in `ls -1 *.inp` ; do

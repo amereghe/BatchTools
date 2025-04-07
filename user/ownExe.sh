@@ -23,7 +23,7 @@ for myMachine in ${myMachines} ; do
     echo "   ...scp-ing source files..."
     scp -r ${ExeFolder}/* ${USER}@${myMachine}:${ExeFolder}
     echo "   ...actually compiling..."
-    ssh ${USER}@${myMachine} "${makeCommand}"
+    ssh -t ${USER}@${myMachine} "${makeCommand}"
 done
 
 echo "...done."

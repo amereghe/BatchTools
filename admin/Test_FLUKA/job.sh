@@ -9,7 +9,7 @@ NN=0
 MM=1
 
 # start job
-echo " starting job at `date` in folder $PWD..."
+echo " starting job at `date` in folder `pwd` as `whoami` on `hostname`..."
 
 #  run
 echo "running command: ${FLUKA}/flutil/rfluka -e ${FLUKAexe} -N${NN} -M${MM} ${inputFile%.inp}"

@@ -1,0 +1,31 @@
+universe = vanilla
+
+# executable must be in case folder
+executable = job.sh
+# list of arguments to executable (empty is accepted)
+arguments =
+initialdir = $(MyRunFolder)
+
+# ask to transfer files (YES/NO) whenever the filesystem is NOT shared
+should_transfer_files = YES
+# list input files to transfer
+transfer_input_files = 
+# list the ONLY output files to transfer
+# NB: if line is NOT found, then all generated/updated files are transferred back
+# transfer_output_files = CNAO_Carbon_2RiFi_E46_exp.inp
+when_to_transfer_output = ON_EXIT
+
+# run job as owner, such that you can ssh to job
+run_as_owner = TRUE
+
+log = htcondor_$(ClusterId).log
+output = htcondor_$(ClusterId)_$(ProcId).out
+error = htcondor_$(ClusterId)_$(ProcId).err
+
+request_cpus = 1
+request_disk = 200MB
+request_memory = 2GB
+
+JobBatchName = "test01"
+
+queue 100

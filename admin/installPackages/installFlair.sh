@@ -53,7 +53,7 @@ cat << EOF > ${pathT2bins}/flair
 #!/usr/bin/sh
 flairDist=${flairDist}
 flairVer=${flairVer}
-"/usr/local/flair/\${flairDist}/flair-\${flairVer}/flair" $*
+"/usr/local/flair/\${flairDist}/flair-\${flairVer}/flair" \$*
 EOF
 chmod +x ${pathT2bins}/flair
 for (( ii=0; ii<${#flairBins[@]}; ii++ )) ; do
@@ -63,7 +63,7 @@ for (( ii=0; ii<${#flairBins[@]}; ii++ )) ; do
 flairDist=${flairDist}
 flairVer=${flairVer}
 DIR="/usr/local/flair/\${flairDist}/flair-\${flairVer}"
-PYTHONPATH=\${DIR}/lib python \${DIR}/${flairExes[${ii}]} $*
+PYTHONPATH=\${DIR}/lib python \${DIR}/${flairExes[${ii}]} \$*
 EOF
     chmod +x ${pathT2bins}/${flairBins[${ii}]}
 done

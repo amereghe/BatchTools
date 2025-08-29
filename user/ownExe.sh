@@ -1,7 +1,7 @@
 #!/bin/bash
 
 ExeFolder="${PWD}"
-myMachines="192.168.1.100 192.168.1.101 192.168.1.102"
+myMachines="192.168.1.100 192.168.1.101 192.168.1.102 192.168.1.103"
 makeCommand="
 cd ${ExeFolder}
 export FLUPRO=/usr/local/FLUKA/INFN/2024.1.3
@@ -23,7 +23,7 @@ for myMachine in ${myMachines} ; do
     echo "   ...scp-ing source files..."
     scp -r ${ExeFolder}/* ${USER}@${myMachine}:${ExeFolder}
     echo "   ...actually compiling..."
-    ssh ${USER}@${myMachine} "${makeCommand}"
+    ssh -t ${USER}@${myMachine} "${makeCommand}"
 done
 
 echo "...done."

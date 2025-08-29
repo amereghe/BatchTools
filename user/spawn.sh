@@ -440,17 +440,17 @@ if ${lGrepStats} ; then
     echo ""
     echo " grepping statistics of jobs already over of study ${caseDir} ..."
     for ext in out out.gz ; do
-        jobsDoneList=`ls -lh ${caseDir}/${whereGM}/*.${ext} 2>/dev/null`
+        jobsDoneList=`ls -lh ${caseDir}/${whereGM}/*[0-9][0-9][0-9].${ext} 2>/dev/null`
         if [ -z "${jobsDoneList}" ] ; then
-            echo " ...no files ${caseDir}/${whereGM}/*.${ext}!"
+            echo " ...no files ${caseDir}/${whereGM}/*[0-9][0-9][0-9].${ext}!"
         else
             # calculations
             nJobsDone=`echo "${jobsDoneList}" | wc -l`
-            stats=`zgrep -h 'Total number of primaries run' ${caseDir}/${whereGM}/*.${ext} | awk -v unit=${myUnStats}  '{tot=tot+$6}END{print (tot/unit)}'`
-            CPUmeanTimes=`zgrep -h 'Average CPU time used to follow a primary particle:'  ${caseDir}/${whereGM}/*.${ext} | awk '{print ($10*1000)}'`
+            stats=`zgrep -h 'Total number of primaries run' ${caseDir}/${whereGM}/*[0-9][0-9][0-9].${ext} | awk -v unit=${myUnStats}  '{tot=tot+$6}END{print (tot/unit)}'`
+            CPUmeanTimes=`zgrep -h 'Average CPU time used to follow a primary particle:'  ${caseDir}/${whereGM}/*[0-9][0-9][0-9].${ext} | awk '{print ($10*1000)}'`
             meanCPUtime=`echo "${CPUmeanTimes}" | awk '{tot=tot+$1}END{print(tot/NR)}'`
             stdCPUtime=`echo "${CPUmeanTimes}" | awk -v mean=${meanCPUtime} '{tot=tot+($1-mean)^2}END{print(sqrt(tot)/NR/mean*100)}'`
-            CPUmaxTimes=`zgrep -h 'Maximum CPU time used to follow a primary particle:'  ${caseDir}/${whereGM}/*.${ext} | awk '{print ($10*1000)}' | sort -g`
+            CPUmaxTimes=`zgrep -h 'Maximum CPU time used to follow a primary particle:'  ${caseDir}/${whereGM}/*[0-9][0-9][0-9].${ext} | awk '{print ($10*1000)}' | sort -g`
             shortestOnes=`echo "${CPUmaxTimes}" | head -5`
             longestOnes=`echo "${CPUmaxTimes}" | tail -5`
             # printout
@@ -465,14 +465,14 @@ if ${lGrepStats} ; then
     done
     echo ""
     echo " grepping statistics of jobs still running for study ${caseDir} ..."
-    jobRunList=`ls -1 ${caseDir}/${whereGM}/fluka_*/*.out 2>/dev/null`
+    jobRunList=`ls -1 ${caseDir}/${whereGM}/fluka_*/*[0-9][0-9][0-9].out 2>/dev/null`
     if [ -z "${jobRunList}" ] ; then
-        echo " ...no files ${caseDir}/${whereGM}/fluka_*/*.out!"
+        echo " ...no files ${caseDir}/${whereGM}/fluka_*/*[0-9][0-9][0-9].out!"
     else
         # calculations
         nJobsRun=`echo "${jobRunList}" | wc -l`
-        stats=`tail -n2 ${caseDir}/${whereGM}/fluka_*/*.out | grep 1.0000000E+30 | awk -v unit=${myUnStats}  '{tot=tot+$1}END{print (tot/unit)}'`
-        CPUmeanTimes=`tail -n2 ${caseDir}/${whereGM}/fluka_*/*.out | grep 1.0000000E+30 | awk '{print ($4*1000)}'`
+        stats=`tail -n2 ${caseDir}/${whereGM}/fluka_*/*[0-9][0-9][0-9].out | grep 1.0000000E+30 | awk -v unit=${myUnStats}  '{tot=tot+$1}END{print (tot/unit)}'`
+        CPUmeanTimes=`tail -n2 ${caseDir}/${whereGM}/fluka_*/*[0-9][0-9][0-9].out | grep 1.0000000E+30 | awk '{print ($4*1000)}'`
         meanCPUtime=`echo "${CPUmeanTimes}" | awk '{tot=tot+$1}END{print(tot/NR)}'`
         stdCPUtime=`echo "${CPUmeanTimes}" | awk -v mean=${meanCPUtime} '{tot=tot+($1-mean)^2}END{print(sqrt(tot)/NR/mean*100)}'`
         shortestOnes=`echo "${CPUmeanTimes}" | head -5`
@@ -480,7 +480,7 @@ if ${lGrepStats} ; then
         # printout
         # echo " ...list of jobs still running:"
         # echo "${jobRunList}"
-        echo " ...found ${nJobsRun} ${caseDir}/${whereGM}/fluka_*/*.out (jobs still running)!"
+        echo " ...found ${nJobsRun} ${caseDir}/${whereGM}/fluka_*/*[0-9][0-9][0-9].out (jobs still running)!"
         for myFile in ${jobRunList} ; do
             myTStamp=`ls -l ${myFile} | awk '{print ($6,$7,$8)}'`
             myStats=`tail -n2 ${myFile} | grep 1.0000000E+30 | awk -v unit=${myUnStats}  '{print ($1/unit)}'`

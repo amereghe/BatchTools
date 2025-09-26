@@ -13,7 +13,7 @@ FLUKAver=`echo ${FLUKAverLong} | cut -d\. -f1,2`
 # GLIBCver=2.17 # ldd --version
 GFORver=11.4  # gfortran --version
 GLIBCver=2.35 # ldd --version
-lDownloadOnly=true
+lDownloadOnly=false
 lDownload=true
 lCopy=false
 lSCopy=false
@@ -25,6 +25,14 @@ die() {
   exit $E_BADARGS
 }
 
+# in case of downloading FLUKA, make sure you load the correct credentials
+if ${lDownload} ; then
+    [ ! -f ./${credFileName} ] || source ./${credFileName}
+    [ ! -f `dirname $0`/${credFileName} ] || source `dirname $0`/${credFileName}
+    [[ -n "${myUserID}" ]] || die "myUserID var NOT defined!"
+    [[ -n "${myUserPass}" ]] || die "myUserPass var NOT defined!"
+fi
+
 # go to suitable folder
 if ! ${lDownloadOnly} ; then
     cd /usr/local
@@ -34,12 +42,8 @@ fi
 
 # download stuff
 if ${lDownload} ; then
-    [ ! -f ./${credFileName} ] || source ./${credFileName}
-    [ ! -f `dirname $0`/${credFileName} ] || source `dirname $0`/${credFileName}
-    [[ -n "${myUserID}" ]] || die "myUserID var NOT defined!"
-    [[ -n "${myUserPass}" ]] || die "myUserPass var NOT defined!"
-    wget --user ${myUserID} --password ${myUserPass} --no-check-certificate https://www.fluka.org/packages/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz
-    wget --user ${myUserID} --password ${myUserPass} --no-check-certificate https://www.fluka.org/packages/fluka${FLUKAver}-data.tar.gz
+    wget --user ${myUserID} --password ${myUserPass} --no-check-certificate https://www.fluka.eu/Fluka/www/htmls/packages/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz
+    wget --user ${myUserID} --password ${myUserPass} --no-check-certificate https://www.fluka.eu/Fluka/www/htmls/packages/fluka${FLUKAver}-data.tar.gz
 elif ${lCopy} ; then
     cp /media/DATA/soft/FLUKA_${FLUKAverLong}/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz .
     cp /media/DATA/soft/FLUKA_${FLUKAverLong}/fluka${FLUKAver}-data.tar.gz .
@@ -66,6 +70,7 @@ make ; $FLUPRO/flutil/ldpmqmd
 # make installation available for the linux group fluka
 chmod -R a+r .
 find . -type f -executable -exec chmod a+x {} \;
+find . -type d -exec chmod g+x {} \;
 cd ../../../
 chown -R root:fluka FLUKA
 

@@ -2,8 +2,8 @@
 
 # run as root!
 
-lDownload=false
-lCopy=true
+lDownload=true
+lCopy=false
 lSCopy=false
 lClean=true
 
@@ -22,8 +22,8 @@ cd ${FLAIRpath}/${flairDist}
 
 # download stuff
 if ${lDownload} ; then
-    wget --no-check-certificate https://www.fluka.org/flair/flair-${flairVer}py3.tgz
-    wget --no-check-certificate https://www.fluka.org/flair/flair-geoviewer-${flairVer}py3.tgz
+    wget --no-check-certificate https://www.fluka.eu/Fluka/www/htmls/flair/flair-${flairVer}py3.tgz
+    wget --no-check-certificate https://www.fluka.eu/Fluka/www/htmls/flair/flair-geoviewer-${flairVer}py3.tgz
 elif ${lCopy} ; then
     cp /media/DATA/soft/flair-${flairVer}py3.tgz .
     cp /media/DATA/soft/flair-geoviewer-${flairVer}py3.tgz .
@@ -63,7 +63,7 @@ for (( ii=0; ii<${#flairBins[@]}; ii++ )) ; do
 flairDist=${flairDist}
 flairVer=${flairVer}
 DIR="/usr/local/flair/\${flairDist}/flair-\${flairVer}"
-PYTHONPATH=\${DIR}/lib python \${DIR}/${flairExes[${ii}]} \$*
+PYTHONPATH=\${DIR}/lib python3 \${DIR}/${flairExes[${ii}]} \$*
 EOF
     chmod +x ${pathT2bins}/${flairBins[${ii}]}
 done
@@ -78,3 +78,6 @@ if [ ${lClean} ] ; then
     rm flair*${flairVer}*.tgz
     rm -rf flair-geoviewer-${flairVer}
 fi
+
+# fix permissions
+chmod -R a+r /usr/local/${FLAIRpath}

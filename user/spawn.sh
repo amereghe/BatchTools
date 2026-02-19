@@ -351,7 +351,7 @@ if ${lPrepare} ; then
     if [ -d ${caseDir} ] ; then
         echo " ...study folder ${caseDir} already exists! updating files..."
     else
-        mkdir ${caseDir}
+        mkdir -p ${caseDir}
     fi
     # copy files
     cd ${origDir}

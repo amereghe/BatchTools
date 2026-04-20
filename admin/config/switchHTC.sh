@@ -89,14 +89,26 @@ fullHTC() {
     lMove=`test -e ${HTCconfig}/${HTCsparingConfigFile}`
     if ${lMove} ; then
         echo "... ${HTCsparingConfigFile} present in ${HTCconfig}: let's proceed with switching..."
+        if ${lDebug} ; then
+            echo "...debug info: situation BEFORE switch:"
+            echo "               condor_config_val MEMORY: `condor_config_val MEMORY`"
+            echo "               condor_config_val NUM_CPUS: `condor_config_val NUM_CPUS`"
+        fi
         ! ${lDebug} || echo "...debug info: condor_off -startd"
+        condor_off -startd
         ! ${lDebug} || echo "...debug info: gentlyStopFLUKAjobs"
         ! ${lDebug} || echo "...debug info: mv ${HTCconfig}/${HTCsparingConfigFile} ${HTCset}/.config"
         ! ${lDebug} || echo "...debug info: condor_restart"
+        condor_restart
+        if ${lDebug} ; then
+            echo "...debug info: situation AFTER switch:"
+            echo "               condor_config_val MEMORY: `condor_config_val MEMORY`"
+            echo "               condor_config_val NUM_CPUS: `condor_config_val NUM_CPUS`"
+        fi
     else
         echo "...no ${HTCsparingConfigFile} in ${HTCconfig}: aborting switch..."
     fi
-    echo "   ...done;"
+    echo "...done;"
 }
 
 spareResources() {
@@ -108,10 +120,22 @@ spareResources() {
     # 4. restart HTCondor on node
     if [ -e ${HTCset}/.config/${HTCsparingConfigFile} ] ; then
         echo "... ${HTCsparingConfigFile} present in ${HTCset}/.config: let's proceed with switching..."
+        if ${lDebug} ; then
+            echo "...debug info: situation BEFORE switch:"
+            echo "               condor_config_val MEMORY: `condor_config_val MEMORY`"
+            echo "               condor_config_val NUM_CPUS: `condor_config_val NUM_CPUS`"
+        fi
         ! ${lDebug} || echo "...debug info: condor_off -startd"
+        condor_off -startd
         ! ${lDebug} || echo "...debug info: gentlyStopFLUKAjobs"
         ! ${lDebug} || echo "...debug info: mv  ${HTCset}/.config/${HTCsparingConfigFile} ${HTCconfig}"
         ! ${lDebug} || echo "...debug info: condor_restart"
+        condor_restart
+        if ${lDebug} ; then
+            echo "...debug info: situation AFTER switch:"
+            echo "               condor_config_val MEMORY: `condor_config_val MEMORY`"
+            echo "               condor_config_val NUM_CPUS: `condor_config_val NUM_CPUS`"
+        fi
     else
         echo "...no ${HTCsparingConfigFile} in ${HTCset}/.config: aborting switch..."
     fi
@@ -167,11 +191,11 @@ HTCset=`realpath ${HTCset}`
 [ -n "${HTCconfig}" ] || die "something wrong with detecting condor config folder" 1
 HTCconfig=${HTCconfig/,/ }
 # get actual HTCondor config folder
-lFound=False
+lFound=false
 for myHTCconfig in ${HTCconfig[@]} ; do
     nFound=`find ${myHTCconfig} -name "*.conf" | wc -l`
-    lFound=`test ${nFound} -ne 0`
-    if ${lFound} ; then break ; fi
+    [ ${nFound} -eq 0 ] || lFound=true
+    ! ${lFound} || break
 done
 if ! ${lFound} ; then
     die "cannot identify actual conf folder of HTCondor"
@@ -186,10 +210,10 @@ fi
 
 if [ -e ${HTCset}/${HTCtrigger} ] ; then
     if ${lFull} ; then
-        echo "moving all spared resources back to HTCondor..."
+        echo "moving all spared resources of the node back to HTCondor..."
         fullHTC
     else
-        echo "sparing resources from HTCondor..."
+        echo "sparing resources of the node from HTCondor..."
         spareResources
     fi
 else

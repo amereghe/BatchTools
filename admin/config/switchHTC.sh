@@ -19,6 +19,7 @@ lDebug=true
 # actions:
 lFull=false
 lSpare=false
+lQuery=true
 # script version
 scriptVer="0.1"
 
@@ -46,6 +47,8 @@ cat <<EOF
        -F  full:     restores full resources to HTCondor
 
        -H  help:     prints this help
+
+       -Q  query:    query status of resources
 
        -S  spare:    stops jobs, reset resources to a lower level and resumes
                      node activity.
@@ -79,6 +82,12 @@ gentlyStopFLUKAjobs(){
     echo "...done;"
 }
 
+echoResources(){
+    for myResource in "MEMORY NUM_CPUS" ; do
+        echo "               condor_config_val ${myResource}: `condor_config_val ${myResource}`"
+    done
+}
+
 fullHTC() {
     echo "call to fullHTC()"
     # steps:
@@ -86,25 +95,19 @@ fullHTC() {
     # 2. gently stop jobs
     # 3. move HTCondor .conf file sparing resources out of config dir
     # 4. restart HTCondor on node
-    lMove=`test -e ${HTCconfig}/${HTCsparingConfigFile}`
-    if ${lMove} ; then
+    if [ -e ${HTCconfig}/${HTCsparingConfigFile} ] ; then
         echo "... ${HTCsparingConfigFile} present in ${HTCconfig}: let's proceed with switching..."
-        if ${lDebug} ; then
+        if ${lQuery} ; then
             echo "...debug info: situation BEFORE switch:"
-            echo "               condor_config_val MEMORY: `condor_config_val MEMORY`"
-            echo "               condor_config_val NUM_CPUS: `condor_config_val NUM_CPUS`"
+            echoResources()
         fi
         ! ${lDebug} || echo "...debug info: condor_off -startd"
         condor_off -startd
         ! ${lDebug} || echo "...debug info: gentlyStopFLUKAjobs"
         ! ${lDebug} || echo "...debug info: mv ${HTCconfig}/${HTCsparingConfigFile} ${HTCset}/.config"
+        mv ${HTCconfig}/${HTCsparingConfigFile} ${HTCset}/.config
         ! ${lDebug} || echo "...debug info: condor_restart"
         condor_restart
-        if ${lDebug} ; then
-            echo "...debug info: situation AFTER switch:"
-            echo "               condor_config_val MEMORY: `condor_config_val MEMORY`"
-            echo "               condor_config_val NUM_CPUS: `condor_config_val NUM_CPUS`"
-        fi
     else
         echo "...no ${HTCsparingConfigFile} in ${HTCconfig}: aborting switch..."
     fi
@@ -120,22 +123,17 @@ spareResources() {
     # 4. restart HTCondor on node
     if [ -e ${HTCset}/.config/${HTCsparingConfigFile} ] ; then
         echo "... ${HTCsparingConfigFile} present in ${HTCset}/.config: let's proceed with switching..."
-        if ${lDebug} ; then
+        if ${lQuery} ; then
             echo "...debug info: situation BEFORE switch:"
-            echo "               condor_config_val MEMORY: `condor_config_val MEMORY`"
-            echo "               condor_config_val NUM_CPUS: `condor_config_val NUM_CPUS`"
+            echoResources()
         fi
         ! ${lDebug} || echo "...debug info: condor_off -startd"
         condor_off -startd
         ! ${lDebug} || echo "...debug info: gentlyStopFLUKAjobs"
         ! ${lDebug} || echo "...debug info: mv  ${HTCset}/.config/${HTCsparingConfigFile} ${HTCconfig}"
+        mv  ${HTCset}/.config/${HTCsparingConfigFile} ${HTCconfig}
         ! ${lDebug} || echo "...debug info: condor_restart"
         condor_restart
-        if ${lDebug} ; then
-            echo "...debug info: situation AFTER switch:"
-            echo "               condor_config_val MEMORY: `condor_config_val MEMORY`"
-            echo "               condor_config_val NUM_CPUS: `condor_config_val NUM_CPUS`"
-        fi
     else
         echo "...no ${HTCsparingConfigFile} in ${HTCset}/.config: aborting switch..."
     fi
@@ -162,6 +160,9 @@ while getopts  ":FHS" opt ; do
             how_to_use
             die "" 0
             ;;
+        Q)
+            lQuery=true
+            ;;
         S)
             lSpare=true
             ;;
@@ -181,8 +182,8 @@ done
 # terminal-line request
 if ${lFull} && ${lSpare} ; then
     die "which action? either -F OR -S, NEVER both at the same time!" 1
-elif ! ${lFull} && ! ${lSpare} ; then
-    die "please choose an action! either -F OR -S, NEVER both at the same time!" 1
+elif ! ${lFull} && ! ${lSpare} && ! ${lQuery} ; then
+    die "please choose an action! either -F OR -Q OR -S!" 1
 fi
 
 # variables
@@ -208,6 +209,11 @@ if ${lDebug} ; then
     echo "debug info: HTC config folder: ${HTCconfig}"
 fi
 
+# ==============================================================================
+# ACTUAL JOB
+# ==============================================================================
+
+lSwitch=false
 if [ -e ${HTCset}/${HTCtrigger} ] ; then
     if ${lFull} ; then
         echo "moving all spared resources of the node back to HTCondor..."
@@ -218,6 +224,11 @@ if [ -e ${HTCset}/${HTCtrigger} ] ; then
     fi
 else
     echo "...file ${HTCtrigger} NOT in folder ${HTCset}: aborting switch..."
+fi
+
+if ${lQuery} ; then
+    echo "...situation of resources:"
+    echoResources()
 fi
 
 # ==============================================================================

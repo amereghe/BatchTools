@@ -15,6 +15,8 @@ HTCconfig=`condor_config_val LOCAL_CONFIG_DIR`
 HTCexecute=`condor_config_val EXECUTE`
 HTCsparingConfigFile="52-reduce-resources-for-bioIng.conf"
 HTCtrigger="switch.me"
+lDebug=true
+# actions:
 lFull=false
 lSpare=false
 # script version
@@ -79,42 +81,39 @@ gentlyStopFLUKAjobs(){
 
 fullHTC() {
     echo "call to fullHTC()"
-    # gently stop HTCondor node
-    # gently stop jobs
-    # move HTCondor .conf file sparing resources out of config dir
-    # restart HTCondor
-    lMove=false
-    for HTCconfDir in ${HTCconfig} ; do
-        if [ -e ${HTCconfDir}/${HTCsparingConfigFile} ] ; then
-            lMove=true
-            break
-        fi
-    done
+    # steps:
+    # 1. gently stop HTCondor node
+    # 2. gently stop jobs
+    # 3. move HTCondor .conf file sparing resources out of config dir
+    # 4. restart HTCondor on node
+    lMove=`test -e ${HTCconfig}/${HTCsparingConfigFile}`
     if ${lMove} ; then
-        echo "... ${HTCsparingConfigFile} present in ${HTCconfDir}: let's proceed with switching..."
-        echo "mv ${HTCconfDir}/${HTCsparingConfigFile} ${HTCset}/.config"
-        echo "condor_off -startd"
-        echo "gentlyStopFLUKAjobs"
-        echo "condor_restart"
+        echo "... ${HTCsparingConfigFile} present in ${HTCconfig}: let's proceed with switching..."
+        ! ${lDebug} || echo "...debug info: condor_off -startd"
+        ! ${lDebug} || echo "...debug info: gentlyStopFLUKAjobs"
+        ! ${lDebug} || echo "...debug info: mv ${HTCconfig}/${HTCsparingConfigFile} ${HTCset}/.config"
+        ! ${lDebug} || echo "...debug info: condor_restart"
     else
-        echo "... no ${HTCsparingConfigFile} in ${HTCconfDir}: aborting switch..."
+        echo "...no ${HTCsparingConfigFile} in ${HTCconfig}: aborting switch..."
     fi
-    echo "...done;"
+    echo "   ...done;"
 }
 
 spareResources() {
     echo "call to spareResources()"
-    # gently stop HTCondor node
-    # gently stop jobs
-    # restore HTCondor .conf file sparing resources in config dir
-    # restart HTCondor
+    # steps:
+    # 1. gently stop HTCondor node
+    # 2. gently stop jobs
+    # 3. restore HTCondor .conf file sparing resources in config dir
+    # 4. restart HTCondor on node
     if [ -e ${HTCset}/.config/${HTCsparingConfigFile} ] ; then
         echo "... ${HTCsparingConfigFile} present in ${HTCset}/.config: let's proceed with switching..."
-        echo "condor_off -startd"
-        echo "gentlyStopFLUKAjobs"
-        echo "condor_restart"
+        ! ${lDebug} || echo "...debug info: condor_off -startd"
+        ! ${lDebug} || echo "...debug info: gentlyStopFLUKAjobs"
+        ! ${lDebug} || echo "...debug info: mv  ${HTCset}/.config/${HTCsparingConfigFile} ${HTCconfig}"
+        ! ${lDebug} || echo "...debug info: condor_restart"
     else
-        echo "... no ${HTCsparingConfigFile} in ${HTCset}/.config: aborting switch..."
+        echo "...no ${HTCsparingConfigFile} in ${HTCset}/.config: aborting switch..."
     fi
     echo "...done;"
 }
@@ -158,6 +157,8 @@ done
 # terminal-line request
 if ${lFull} && ${lSpare} ; then
     die "which action? either -F OR -S, NEVER both at the same time!" 1
+elif ! ${lFull} && ! ${lSpare} ; then
+    die "please choose an action! either -F OR -S, NEVER both at the same time!" 1
 fi
 
 # variables
@@ -165,9 +166,23 @@ fi
 HTCset=`realpath ${HTCset}`
 [ -n "${HTCconfig}" ] || die "something wrong with detecting condor config folder" 1
 HTCconfig=${HTCconfig/,/ }
+# get actual HTCondor config folder
+lFound=False
+for myHTCconfig in ${HTCconfig[@]} ; do
+    nFound=`find ${myHTCconfig} -name "*.conf" | wc -l`
+    lFound=`test ${nFound} -ne 0`
+    if ${lFound} ; then break ; fi
+done
+if ! ${lFound} ; then
+    die "cannot identify actual conf folder of HTCondor"
+else
+    HTCconfig=${myHTCconfig}
+fi
 
-echo "${HTCset}"
-echo "${HTCconfig}"
+if ${lDebug} ; then
+    echo "debug info: HTC setting folder: ${HTCset}"
+    echo "debug info: HTC config folder: ${HTCconfig}"
+fi
 
 if [ -e ${HTCset}/${HTCtrigger} ] ; then
     if ${lFull} ; then

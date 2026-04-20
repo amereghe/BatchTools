@@ -83,7 +83,7 @@ gentlyStopFLUKAjobs(){
 }
 
 echoResources(){
-    for myResource in "MEMORY NUM_CPUS" ; do
+    for myResource in MEMORY NUM_CPUS ; do
         echo "               condor_config_val ${myResource}: `condor_config_val ${myResource}`"
     done
 }
@@ -99,7 +99,7 @@ fullHTC() {
         echo "... ${HTCsparingConfigFile} present in ${HTCconfig}: let's proceed with switching..."
         if ${lQuery} ; then
             echo "...debug info: situation BEFORE switch:"
-            echoResources()
+            echoResources
         fi
         ! ${lDebug} || echo "...debug info: condor_off -startd"
         condor_off -startd
@@ -125,7 +125,7 @@ spareResources() {
         echo "... ${HTCsparingConfigFile} present in ${HTCset}/.config: let's proceed with switching..."
         if ${lQuery} ; then
             echo "...debug info: situation BEFORE switch:"
-            echoResources()
+            echoResources
         fi
         ! ${lDebug} || echo "...debug info: condor_off -startd"
         condor_off -startd
@@ -151,7 +151,7 @@ echo "`date +"[%Y-%m-%d %H:%M:%S]"` ==> ver ${scriptVer} <== $0 $*"
 # OPTIONs
 # ==============================================================================
 
-while getopts  ":FHS" opt ; do
+while getopts  ":FQHS" opt ; do
     case $opt in
         F)
             lFull=true
@@ -213,14 +213,15 @@ fi
 # ACTUAL JOB
 # ==============================================================================
 
-lSwitch=false
 if [ -e ${HTCset}/${HTCtrigger} ] ; then
     if ${lFull} ; then
         echo "moving all spared resources of the node back to HTCondor..."
         fullHTC
-    else
+    elif ${lSpare} ; then
         echo "sparing resources of the node from HTCondor..."
         spareResources
+    else
+        echo "query resources:"
     fi
 else
     echo "...file ${HTCtrigger} NOT in folder ${HTCset}: aborting switch..."
@@ -228,7 +229,7 @@ fi
 
 if ${lQuery} ; then
     echo "...situation of resources:"
-    echoResources()
+    echoResources
 fi
 
 # ==============================================================================

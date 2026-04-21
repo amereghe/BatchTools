@@ -15,7 +15,7 @@ HTCconfig=`condor_config_val LOCAL_CONFIG_DIR`
 HTCexecute=`condor_config_val EXECUTE`
 HTCsparingConfigFile="52-reduced-resources.conf"
 HTCtrigger="switch.me"
-lDebug=true
+lDebug=false
 # actions:
 lFull=false
 lSpare=false
@@ -28,7 +28,7 @@ scriptVer="0.1"
 # ==============================================================================
 
 die() {
-  echo >&2 "$1"
+  echo "$1"
   exit $2
 }
 
@@ -36,7 +36,7 @@ how_to_use() {
        script_name=`basename $0`
 cat <<EOF
 
-       ${script_name} [actions]
+       ${script_name} [actions] [options]
 
                    ==> Version number ${scriptVer} <==
 
@@ -44,15 +44,17 @@ cat <<EOF
          resources back to HTCondor
 
        actions:
-       -F  full:     restores full resources to HTCondor
+       -F  full:       restores full resources to HTCondor
 
-       -H  help:     prints this help
+       -H  help:       prints this help
 
-       -Q  query:    query status of resources
+       -Q  query:      query status of resources
 
-       -S  spare:    stops jobs, reset resources to a lower level and resumes
-                     node activity.
+       -S  spare:      stops jobs, reset resources to a lower level and resumes
+                         node activity.
 
+       actions:
+       -d  debug mode: debug output is on (off by default)
 EOF
 }
 
@@ -149,14 +151,18 @@ spareResources() {
 # ==============================================================================
 
 # log terminal line command
+echo ""
 echo "`date +"[%Y-%m-%d %H:%M:%S]"` ==> ver ${scriptVer} <== $0 $*"
 
 # ==============================================================================
 # OPTIONs
 # ==============================================================================
 
-while getopts  ":FQHS" opt ; do
+while getopts  ":dFQHS" opt ; do
     case $opt in
+        d)
+            lDebug=true
+            ;;
         F)
             lFull=true
             ;;

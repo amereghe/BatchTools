@@ -13,7 +13,7 @@
 HTCset=`dirname $0`
 HTCconfig=`condor_config_val LOCAL_CONFIG_DIR`
 HTCexecute=`condor_config_val EXECUTE`
-HTCsparingConfigFile="52-reduce-resources-for-bioIng.conf"
+HTCsparingConfigFile="52-reduced-resources.conf"
 HTCtrigger="switch.me"
 lDebug=true
 # actions:

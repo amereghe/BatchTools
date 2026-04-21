@@ -56,34 +56,32 @@ cat <<EOF
 EOF
 }
 
-gentlyStopFLUKAjobs(){
-    echo "gently stopping FLUKA jobs..."
-    lTouched=false
+gentlyStopJobs(){
+    echo "gently stopping jobs..."
+    echo "...FLUKA jobs..."
+    find ${HTCexecute} -name "fluka_*" -exec touch {}/rfluka.stop \;
+    echo "...done;"
+}
+
+waitForJobsToFinish(){
     nWaitMax=10
+    echo "waiting for stopping jobs..."
+    echo "...waiting for FLUKA jobs to finish..."
     nWait=0
-    for flukaFolder in `find ${HTCexecute} -name "fluka_*"` ; do
-        echo "...stopping job in folder ${flukaFolder} ..."
-        touch ${flukaFolder}/rfluka.stop
-        lTouched=true
+    while [ `find ${HTCexecute} -name "fluka_*" | wc -l` -ne 0 ] ; do
+        let nWait=nWait+1
+        echo "...still `find ${HTCexecute} -name "fluka_*" | wc -l` jobs running. Waiting (${nWait}/${nWaitMax})..."
+        sleep 1m
+        if [ ${nWait} -ge ${nWaitMax} ] ; then
+            echo "...waited ${nWait} times. End wait!"
+            break
+        fi
     done
-    if ${lTouched} ; then
-        echo "...waiting for FLUKA jobs to finish..."
-        find ${HTCexecute} -name "fluka_*" | wc -l
-        # while [ `find ${HTCexecute} -name "fluka_*" | wc -l` -ne 0 ] ; do
-        #     echo "...still `find ${HTCexecute} -name "fluka_*" | wc -l` jobs running. Waiting..."
-        #     sleep 1m
-        #     let nWait=nWait+1
-        #     if [ ${nWait} -ge ${nWaitMax} ] ; then
-        #         echo "...waited ${nWait} times. End wait!"
-        #         break
-        #     fi
-        # done
-    fi
     echo "...done;"
 }
 
 echoResources(){
-    for myResource in MEMORY NUM_CPUS ; do
+    for myResource in MEMORY RESERVED_MEMORY NUM_CPUS ; do
         echo "               condor_config_val ${myResource}: `condor_config_val ${myResource}`"
     done
 }
@@ -91,22 +89,25 @@ echoResources(){
 fullHTC() {
     echo "call to fullHTC()"
     # steps:
-    # 1. gently stop HTCondor node
-    # 2. gently stop jobs
-    # 3. move HTCondor .conf file sparing resources out of config dir
-    # 4. restart HTCondor on node
+    # 1. stop HTCondor node
+    # 2. move HTCondor .conf file sparing resources out of config dir
+    # 3. gently stop jobs and wait for them to be over
+    # 4. restart HTCondor on node (this will kill jobs still running)
     if [ -e ${HTCconfig}/${HTCsparingConfigFile} ] ; then
         echo "... ${HTCsparingConfigFile} present in ${HTCconfig}: let's proceed with switching..."
         if ${lQuery} ; then
             echo "...debug info: situation BEFORE switch:"
             echoResources
         fi
-        ! ${lDebug} || echo "...debug info: condor_off -startd"
-        condor_off -startd
-        ! ${lDebug} || echo "...debug info: gentlyStopFLUKAjobs"
+        ! ${lDebug} || echo "...debug info: condor_off -peaceful -startd"
+        condor_off -peaceful -startd
         ! ${lDebug} || echo "...debug info: mv ${HTCconfig}/${HTCsparingConfigFile} ${HTCset}/.config"
         mv ${HTCconfig}/${HTCsparingConfigFile} ${HTCset}/.config
-        ! ${lDebug} || echo "...debug info: condor_restart"
+        ! ${lDebug} || echo "...debug info: gentlyStopJobs()"
+        gentlyStopJobs
+        ! ${lDebug} || echo "...debug info: waitForJobsToFinish()"
+        waitForJobsToFinish
+        ! ${lDebug} || echo "...debug info: condor_restart (killing remaining jobs)"
         condor_restart
     else
         echo "...no ${HTCsparingConfigFile} in ${HTCconfig}: aborting switch..."
@@ -117,22 +118,25 @@ fullHTC() {
 spareResources() {
     echo "call to spareResources()"
     # steps:
-    # 1. gently stop HTCondor node
-    # 2. gently stop jobs
-    # 3. restore HTCondor .conf file sparing resources in config dir
-    # 4. restart HTCondor on node
+    # 1. stop HTCondor node
+    # 2. restore HTCondor .conf file sparing resources in config dir
+    # 3. gently stop jobs and wait for them to be over
+    # 4. restart HTCondor on node (this will kill jobs still running)
     if [ -e ${HTCset}/.config/${HTCsparingConfigFile} ] ; then
         echo "... ${HTCsparingConfigFile} present in ${HTCset}/.config: let's proceed with switching..."
         if ${lQuery} ; then
             echo "...debug info: situation BEFORE switch:"
             echoResources
         fi
-        ! ${lDebug} || echo "...debug info: condor_off -startd"
-        condor_off -startd
-        ! ${lDebug} || echo "...debug info: gentlyStopFLUKAjobs"
-        ! ${lDebug} || echo "...debug info: mv  ${HTCset}/.config/${HTCsparingConfigFile} ${HTCconfig}"
-        mv  ${HTCset}/.config/${HTCsparingConfigFile} ${HTCconfig}
-        ! ${lDebug} || echo "...debug info: condor_restart"
+        ! ${lDebug} || echo "...debug info: condor_off -peaceful -startd"
+        condor_off -peaceful -startd
+        ! ${lDebug} || echo "...debug info: mv ${HTCset}/.config/${HTCsparingConfigFile} ${HTCconfig}"
+        mv ${HTCset}/.config/${HTCsparingConfigFile} ${HTCconfig}
+        ! ${lDebug} || echo "...debug info: gentlyStopJobs()"
+        gentlyStopJobs
+        ! ${lDebug} || echo "...debug info: waitForJobsToFinish()"
+        waitForJobsToFinish
+        ! ${lDebug} || echo "...debug info: condor_restart (killing remaining jobs)"
         condor_restart
     else
         echo "...no ${HTCsparingConfigFile} in ${HTCset}/.config: aborting switch..."

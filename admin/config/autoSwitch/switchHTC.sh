@@ -98,52 +98,46 @@ echoResources(){
     done
 }
 
-fullHTC() {
-    echo "call to fullHTC()"
+switchResources() {
+    echo "call to switchResources()"
+    lSwitch=false
     # steps:
     # 1. stop HTCondor node
-    # 2. move HTCondor .conf file sparing resources out of config dir
+    # 2. either of the two possibilities:
+    #    - restore HTCondor .conf file sparing resources in config dir
+    #    - move HTCondor .conf file sparing resources out of config dir
     # 3. gently stop jobs and wait for them to be over
     # 4. restart HTCondor on node (this will kill jobs still running)
-    if [ -e ${HTCconfig}/${HTCsparConfigFile} ] ; then
-        echo "... ${HTCsparConfigFile} present in ${HTCconfig}: let's proceed with switching..."
-        if ${lQuery} ; then
-            echo "...debug info: situation BEFORE switch:"
-            echoResources
+    if ${lSpare} ; then
+        if [ -e ${HTCset}/.config/${HTCsparConfigFile} ] ; then
+            echo "... ${HTCsparConfigFile} present in ${HTCset}/.config: moving all spared resources of the node back to HTCondor..."
+            lSwitch=true
+        else
+            echo "...no ${HTCsparConfigFile} in ${HTCset}/.config: aborting switch..."
         fi
-        ! ${lDebug} || echo "...debug info: condor_off -peaceful -startd"
-        condor_off -peaceful -startd
-        ! ${lDebug} || echo "...debug info: mv ${HTCconfig}/${HTCsparConfigFile} ${HTCset}/.config"
-        mv ${HTCconfig}/${HTCsparConfigFile} ${HTCset}/.config
-        ! ${lDebug} || echo "...debug info: gentlyStopJobs()"
-        gentlyStopJobs
-        ! ${lDebug} || echo "...debug info: waitForJobsToFinish()"
-        waitForJobsToFinish
-        ! ${lDebug} || echo "...debug info: condor_restart (killing remaining jobs)"
-        condor_restart
-    else
-        echo "...no ${HTCsparConfigFile} in ${HTCconfig}: aborting switch..."
+    elif ${lFull} ; then
+        if [ -e ${HTCconfig}/${HTCsparConfigFile} ] ; then
+            echo "... ${HTCsparConfigFile} present in ${HTCconfig}: sparing resources of the node from HTCondor..."
+            lSwitch=true
+        else
+            echo "...no ${HTCsparConfigFile} in ${HTCconfig}: aborting switch..."
+        fi
     fi
-    echo "...done;"
-}
 
-spareResources() {
-    echo "call to spareResources()"
-    # steps:
-    # 1. stop HTCondor node
-    # 2. restore HTCondor .conf file sparing resources in config dir
-    # 3. gently stop jobs and wait for them to be over
-    # 4. restart HTCondor on node (this will kill jobs still running)
-    if [ -e ${HTCset}/.config/${HTCsparConfigFile} ] ; then
-        echo "... ${HTCsparConfigFile} present in ${HTCset}/.config: let's proceed with switching..."
+    if ${lSwitch} ; then
         if ${lQuery} ; then
             echo "...debug info: situation BEFORE switch:"
             echoResources
         fi
         ! ${lDebug} || echo "...debug info: condor_off -peaceful -startd"
         condor_off -peaceful -startd
-        ! ${lDebug} || echo "...debug info: mv ${HTCset}/.config/${HTCsparConfigFile} ${HTCconfig}"
-        mv ${HTCset}/.config/${HTCsparConfigFile} ${HTCconfig}
+        if ${lSpare} ; then
+            ! ${lDebug} || echo "...debug info: mv ${HTCset}/.config/${HTCsparConfigFile} ${HTCconfig}"
+            mv ${HTCset}/.config/${HTCsparConfigFile} ${HTCconfig}
+        elif ${lFull} ; then
+            ! ${lDebug} || echo "...debug info: mv ${HTCconfig}/${HTCsparConfigFile} ${HTCset}/.config"
+            mv ${HTCconfig}/${HTCsparConfigFile} ${HTCset}/.config
+        fi
         ! ${lDebug} || echo "...debug info: gentlyStopJobs()"
         gentlyStopJobs
         ! ${lDebug} || echo "...debug info: waitForJobsToFinish()"
@@ -151,7 +145,6 @@ spareResources() {
         ! ${lDebug} || echo "...debug info: condor_restart (killing remaining jobs)"
         condor_restart
     else
-        echo "...no ${HTCsparConfigFile} in ${HTCset}/.config: aborting switch..."
     fi
     echo "...done;"
 }
@@ -240,15 +233,7 @@ fi
 # ==============================================================================
 
 if [ -e ${HTCset}/${HTCsparTrigger} ] ; then
-    if ${lFull} ; then
-        echo "moving all spared resources of the node back to HTCondor..."
-        fullHTC
-    elif ${lSpare} ; then
-        echo "sparing resources of the node from HTCondor..."
-        spareResources
-    else
-        echo "query resources:"
-    fi
+    switchResources
 else
     echo "...file ${HTCsparTrigger} NOT in folder ${HTCset}: aborting switch..."
 fi

@@ -99,13 +99,15 @@ echoResources(){
 }
 
 generateHTCspareFile(){
-    echo > ${HTCset}/.config/${HTCsparConfigFile} <<EOF
+    echo "call to generateHTCspareFile()"
+    cat > ${HTCset}/${HTCsparConfigFile} <<EOF
 # spare resources
 # - reserve ${HTCSparRAM} GB of RAM
 MEMORY = \$(DETECTED_MEMORY)-${HTCSparRAM}*1024
 # - reserve 20 threads
 NUM_CPUS = \$(NUM_CPUS)-${HTCSparCPUs}
 EOF
+    echo "...done;"
 }
 
 switchResources() {
@@ -121,11 +123,11 @@ switchResources() {
     if ${lSpare} ; then
         ! ${lDebug} || echo "...debug info: generateHTCspareFile()"
         generateHTCspareFile
-        if [ -e ${HTCset}/.config/${HTCsparConfigFile} ] ; then
-            echo "... ${HTCsparConfigFile} present in ${HTCset}/.config: sparing resources of the node from HTCondor..."
+        if [ -e ${HTCset}/${HTCsparConfigFile} ] ; then
+            echo "... ${HTCsparConfigFile} present in ${HTCset}: sparing resources of the node from HTCondor..."
             lSwitch=true
         else
-            echo "...no ${HTCsparConfigFile} in ${HTCset}/.config: aborting switch..."
+            echo "...no ${HTCsparConfigFile} in ${HTCset}: aborting switch..."
         fi
     elif ${lFull} ; then
         if [ -e ${HTCconfig}/${HTCsparConfigFile} ] ; then
@@ -141,8 +143,8 @@ switchResources() {
             echo "...debug info: situation BEFORE switch:"
             echoResources
         fi
-        # ! ${lDebug} || echo "...debug info: condor_off -peaceful -startd"
-        # condor_off -peaceful -startd
+        ! ${lDebug} || echo "...debug info: condor_off -peaceful -startd"
+        condor_off -peaceful -startd
         if ${lSpare} ; then
             ! ${lDebug} || echo "...debug info: mv ${HTCset}/${HTCsparConfigFile} ${HTCconfig}"
             mv ${HTCset}/${HTCsparConfigFile} ${HTCconfig}
@@ -150,12 +152,12 @@ switchResources() {
             ! ${lDebug} || echo "...debug info: rm ${HTCconfig}/${HTCsparConfigFile}"
             rm ${HTCconfig}/${HTCsparConfigFile}
         fi
-        # ! ${lDebug} || echo "...debug info: gentlyStopJobs()"
-        # gentlyStopJobs
-        # ! ${lDebug} || echo "...debug info: waitForJobsToFinish()"
-        # waitForJobsToFinish
-        # ! ${lDebug} || echo "...debug info: condor_restart (killing remaining jobs)"
-        # condor_restart
+        ! ${lDebug} || echo "...debug info: gentlyStopJobs()"
+        gentlyStopJobs
+        ! ${lDebug} || echo "...debug info: waitForJobsToFinish()"
+        waitForJobsToFinish
+        ! ${lDebug} || echo "...debug info: condor_restart (killing remaining jobs)"
+        condor_restart
     fi
     
     echo "...done;"

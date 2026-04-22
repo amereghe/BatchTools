@@ -98,6 +98,16 @@ echoResources(){
     done
 }
 
+generateHTCspareFile(){
+    echo > ${HTCset}/.config/${HTCsparConfigFile} <<EOF
+# spare resources
+# - reserve ${HTCSparRAM} GB of RAM
+MEMORY = \$(DETECTED_MEMORY)-${HTCSparRAM}*1024
+# - reserve 20 threads
+NUM_CPUS = \$(NUM_CPUS)-${HTCSparCPUs}
+EOF
+}
+
 switchResources() {
     echo "call to switchResources()"
     lSwitch=false
@@ -109,15 +119,17 @@ switchResources() {
     # 3. gently stop jobs and wait for them to be over
     # 4. restart HTCondor on node (this will kill jobs still running)
     if ${lSpare} ; then
+        ! ${lDebug} || echo "...debug info: generateHTCspareFile()"
+        generateHTCspareFile
         if [ -e ${HTCset}/.config/${HTCsparConfigFile} ] ; then
-            echo "... ${HTCsparConfigFile} present in ${HTCset}/.config: moving all spared resources of the node back to HTCondor..."
+            echo "... ${HTCsparConfigFile} present in ${HTCset}/.config: sparing resources of the node from HTCondor..."
             lSwitch=true
         else
             echo "...no ${HTCsparConfigFile} in ${HTCset}/.config: aborting switch..."
         fi
     elif ${lFull} ; then
         if [ -e ${HTCconfig}/${HTCsparConfigFile} ] ; then
-            echo "... ${HTCsparConfigFile} present in ${HTCconfig}: sparing resources of the node from HTCondor..."
+            echo "... ${HTCsparConfigFile} present in ${HTCconfig}: moving all spared resources of the node back to HTCondor..."
             lSwitch=true
         else
             echo "...no ${HTCsparConfigFile} in ${HTCconfig}: aborting switch..."
@@ -129,23 +141,23 @@ switchResources() {
             echo "...debug info: situation BEFORE switch:"
             echoResources
         fi
-        ! ${lDebug} || echo "...debug info: condor_off -peaceful -startd"
-        condor_off -peaceful -startd
+        # ! ${lDebug} || echo "...debug info: condor_off -peaceful -startd"
+        # condor_off -peaceful -startd
         if ${lSpare} ; then
-            ! ${lDebug} || echo "...debug info: mv ${HTCset}/.config/${HTCsparConfigFile} ${HTCconfig}"
-            mv ${HTCset}/.config/${HTCsparConfigFile} ${HTCconfig}
+            ! ${lDebug} || echo "...debug info: mv ${HTCset}/${HTCsparConfigFile} ${HTCconfig}"
+            mv ${HTCset}/${HTCsparConfigFile} ${HTCconfig}
         elif ${lFull} ; then
-            ! ${lDebug} || echo "...debug info: mv ${HTCconfig}/${HTCsparConfigFile} ${HTCset}/.config"
-            mv ${HTCconfig}/${HTCsparConfigFile} ${HTCset}/.config
+            ! ${lDebug} || echo "...debug info: rm ${HTCconfig}/${HTCsparConfigFile}"
+            rm ${HTCconfig}/${HTCsparConfigFile}
         fi
-        ! ${lDebug} || echo "...debug info: gentlyStopJobs()"
-        gentlyStopJobs
-        ! ${lDebug} || echo "...debug info: waitForJobsToFinish()"
-        waitForJobsToFinish
-        ! ${lDebug} || echo "...debug info: condor_restart (killing remaining jobs)"
-        condor_restart
-    else
+        # ! ${lDebug} || echo "...debug info: gentlyStopJobs()"
+        # gentlyStopJobs
+        # ! ${lDebug} || echo "...debug info: waitForJobsToFinish()"
+        # waitForJobsToFinish
+        # ! ${lDebug} || echo "...debug info: condor_restart (killing remaining jobs)"
+        # condor_restart
     fi
+    
     echo "...done;"
 }
 

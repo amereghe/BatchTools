@@ -16,13 +16,12 @@ A possible path and structure is:
 $ pwd
 /home/condset
 $ ls -la
-total 24
+total 20
 drwxrwxr-x 3 root condset 4096 apr 21 16:39 .
 drwxr-xr-x 8 root root    4096 mar 31 09:48 ..
-drwxr-xr-x 2 root condset 4096 apr 21 16:42 .config
 -rwxrwxr-- 1 root condset 7772 apr 21 16:41 switchHTC.sh
 -rw-r--r-- 1 root condset 1105 apr 21 16:41 switchHTC.sh.log
--rw-rw-r-- 1 root condset    0 apr 21 16:19 switch.me
+-rw-rw-r-- 1 root condset    0 apr 21 16:19 .switch.me
 $ ls -la .config
 total 8
 drwxr-xr-x 2 root condset 4096 apr 21 15:38 .
@@ -40,7 +39,7 @@ $ usermod -aG condset <userName>
 ```
 
 ## The trigger file
-The trigger file is `switch.me`:
+The trigger file is `.switch.me`:
 * if present, then the switch takes place - no matter in which direction, i.e. in order to spare resources (e.g. for direct login) or to make them available to HTCondor;
 * if the file is moved (i.e. named differently), then the switch is inhibited; hence, the resources are not moved.
 
@@ -54,9 +53,9 @@ Renaming the file is the preferred option, such that the correct rights, once pr
 # - path to storing folder
 export CondPath="/home/condset"
 # - alias to trigger all resources into HTCondor
-alias HTCfullRes='mv ${CondPath}/dont.switch.me ${CondPath}/switch.me'
+alias HTCTrigOn='mv ${CondPath}/.dont.switch.me ${CondPath}/.switch.me'
 # - alias to spare resources out of HTCondor
-alias HTCSparRes='mv ${CondPath}/switch.me ${CondPath}/dont.switch.me'
+alias HTCTrigOff='mv ${CondPath}/.switch.me ${CondPath}/.dont.switch.me'
 # - alias to display the resources currently available to HTCondor
 alias HTCStatRes='${CondPath}/switchHTC.sh -Q'
 # - alias to display the status of the trigger

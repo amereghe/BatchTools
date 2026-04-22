@@ -6,20 +6,23 @@
 # drwxr-xr-x 8 root root    4096 mar 31 09:48 ../
 # the condset linux group contains all people that can activate/deactivate
 #     the move of resources in/out of HTCondor
-# the HTCsparingConfigFile is the HTCondor config file sparing resources
+# the HTCsparConfigFile is the HTCondor config file sparing resources
 #     it is moved back and forth between the /home/condset and the HTCondor
 #     config folder
 
 HTCset=`dirname $0`
 HTCconfig=`condor_config_val LOCAL_CONFIG_DIR`
 HTCexecute=`condor_config_val EXECUTE`
-HTCsparingConfigFile="52-reduced-resources.conf"
-HTCtrigger="switch.me"
-lDebug=false
 # actions:
 lFull=false
 lSpare=false
 lQuery=true
+# options
+lDebug=false
+HTCsparConfigFile="52-spare-resources.conf"
+HTCsparTrigger=".switch.me"
+HTCSparCPUs=20 # []
+HTCSparRAM=65 # [GB]
 # script version
 scriptVer="0.1"
 
@@ -53,8 +56,15 @@ cat <<EOF
        -S  spare:      stops jobs, reset resources to a lower level and resumes
                          node activity.
 
-       actions:
-       -d  debug mode: debug output is on (off by default)
+       options:
+       -d  debug mode: debug output is on (default: ${lDebug})
+
+       -f  spare file: name of HTCondor config file describing resources to
+                         be spared (default: ${HTCsparConfigFile})
+
+       -n  spare CPUs: number of CPUs to spare (default: ${HTCSparCPUs})
+
+       -r  spare RAM:  RAM to spare (in GB - default: ${HTCSparRAM})
 EOF
 }
 
@@ -95,16 +105,16 @@ fullHTC() {
     # 2. move HTCondor .conf file sparing resources out of config dir
     # 3. gently stop jobs and wait for them to be over
     # 4. restart HTCondor on node (this will kill jobs still running)
-    if [ -e ${HTCconfig}/${HTCsparingConfigFile} ] ; then
-        echo "... ${HTCsparingConfigFile} present in ${HTCconfig}: let's proceed with switching..."
+    if [ -e ${HTCconfig}/${HTCsparConfigFile} ] ; then
+        echo "... ${HTCsparConfigFile} present in ${HTCconfig}: let's proceed with switching..."
         if ${lQuery} ; then
             echo "...debug info: situation BEFORE switch:"
             echoResources
         fi
         ! ${lDebug} || echo "...debug info: condor_off -peaceful -startd"
         condor_off -peaceful -startd
-        ! ${lDebug} || echo "...debug info: mv ${HTCconfig}/${HTCsparingConfigFile} ${HTCset}/.config"
-        mv ${HTCconfig}/${HTCsparingConfigFile} ${HTCset}/.config
+        ! ${lDebug} || echo "...debug info: mv ${HTCconfig}/${HTCsparConfigFile} ${HTCset}/.config"
+        mv ${HTCconfig}/${HTCsparConfigFile} ${HTCset}/.config
         ! ${lDebug} || echo "...debug info: gentlyStopJobs()"
         gentlyStopJobs
         ! ${lDebug} || echo "...debug info: waitForJobsToFinish()"
@@ -112,7 +122,7 @@ fullHTC() {
         ! ${lDebug} || echo "...debug info: condor_restart (killing remaining jobs)"
         condor_restart
     else
-        echo "...no ${HTCsparingConfigFile} in ${HTCconfig}: aborting switch..."
+        echo "...no ${HTCsparConfigFile} in ${HTCconfig}: aborting switch..."
     fi
     echo "...done;"
 }
@@ -124,16 +134,16 @@ spareResources() {
     # 2. restore HTCondor .conf file sparing resources in config dir
     # 3. gently stop jobs and wait for them to be over
     # 4. restart HTCondor on node (this will kill jobs still running)
-    if [ -e ${HTCset}/.config/${HTCsparingConfigFile} ] ; then
-        echo "... ${HTCsparingConfigFile} present in ${HTCset}/.config: let's proceed with switching..."
+    if [ -e ${HTCset}/.config/${HTCsparConfigFile} ] ; then
+        echo "... ${HTCsparConfigFile} present in ${HTCset}/.config: let's proceed with switching..."
         if ${lQuery} ; then
             echo "...debug info: situation BEFORE switch:"
             echoResources
         fi
         ! ${lDebug} || echo "...debug info: condor_off -peaceful -startd"
         condor_off -peaceful -startd
-        ! ${lDebug} || echo "...debug info: mv ${HTCset}/.config/${HTCsparingConfigFile} ${HTCconfig}"
-        mv ${HTCset}/.config/${HTCsparingConfigFile} ${HTCconfig}
+        ! ${lDebug} || echo "...debug info: mv ${HTCset}/.config/${HTCsparConfigFile} ${HTCconfig}"
+        mv ${HTCset}/.config/${HTCsparConfigFile} ${HTCconfig}
         ! ${lDebug} || echo "...debug info: gentlyStopJobs()"
         gentlyStopJobs
         ! ${lDebug} || echo "...debug info: waitForJobsToFinish()"
@@ -141,7 +151,7 @@ spareResources() {
         ! ${lDebug} || echo "...debug info: condor_restart (killing remaining jobs)"
         condor_restart
     else
-        echo "...no ${HTCsparingConfigFile} in ${HTCset}/.config: aborting switch..."
+        echo "...no ${HTCsparConfigFile} in ${HTCset}/.config: aborting switch..."
     fi
     echo "...done;"
 }
@@ -158,7 +168,7 @@ echo "`date +"[%Y-%m-%d %H:%M:%S]"` ==> ver ${scriptVer} <== $0 $*"
 # OPTIONs
 # ==============================================================================
 
-while getopts  ":dFQHS" opt ; do
+while getopts  ":dFQHn:r:S" opt ; do
     case $opt in
         d)
             lDebug=true
@@ -170,8 +180,14 @@ while getopts  ":dFQHS" opt ; do
             how_to_use
             die "" 0
             ;;
+        n)
+            HTCSparCPUs=$OPTARG
+            ;;
         Q)
             lQuery=true
+            ;;
+        r)
+            HTCSparRAM=$OPTARG
             ;;
         S)
             lSpare=true
@@ -223,7 +239,7 @@ fi
 # ACTUAL JOB
 # ==============================================================================
 
-if [ -e ${HTCset}/${HTCtrigger} ] ; then
+if [ -e ${HTCset}/${HTCsparTrigger} ] ; then
     if ${lFull} ; then
         echo "moving all spared resources of the node back to HTCondor..."
         fullHTC
@@ -234,7 +250,7 @@ if [ -e ${HTCset}/${HTCtrigger} ] ; then
         echo "query resources:"
     fi
 else
-    echo "...file ${HTCtrigger} NOT in folder ${HTCset}: aborting switch..."
+    echo "...file ${HTCsparTrigger} NOT in folder ${HTCset}: aborting switch..."
 fi
 
 if ${lQuery} ; then

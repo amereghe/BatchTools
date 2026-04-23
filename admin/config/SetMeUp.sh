@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# run these lines as ROOT!
+# in case of issue of CA-certificates with curl, please add the -k option to the curl command
+
 # central manager IP
 export central_manager_name=192.168.1.100
 
@@ -7,7 +10,7 @@ export central_manager_name=192.168.1.100
 export htcondor_password=MyHTC0nd0r~CN@0!
 
 
-# INSTALLATION (as root)
+# INSTALLATION
 # from https://htcondor.readthedocs.io/en/latest/getting-htcondor/admin-quick-start.html
 # - create central manager
 curl -fsSL https://get.htcondor.org | GET_HTCONDOR_PASSWORD="$htcondor_password" /bin/bash -s -- --no-dry-run --central-manager $central_manager_name

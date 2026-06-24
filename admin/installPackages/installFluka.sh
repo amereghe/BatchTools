@@ -58,8 +58,8 @@ elif ${lCopy} ; then
     cp /mnt/san_data/soft/FLUKA/INFN/${FLUKAverLong}/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz .
     cp /mnt/san_data/soft/FLUKA/INFN/${FLUKAverLong}/fluka${FLUKAver}-data.tar.gz .
 elif ${lSCopy} ; then
-    scp amereghe@192.168.1.100:/media/DATA/soft/FLUKA_${FLUKAverLong}/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz .
-    scp amereghe@192.168.1.100:/media/DATA/soft/FLUKA_${FLUKAverLong}/fluka${FLUKAver}-data.tar.gz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/FLUKA/INFN/${FLUKAverLong}/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/FLUKA/INFN/${FLUKAverLong}/fluka${FLUKAver}-data.tar.gz .
 fi
 if ${lDownloadOnly} ; then
     exit

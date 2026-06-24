@@ -2,9 +2,9 @@
 
 # run as root!
 
-lDownload=true
+lDownload=false
 lCopy=false
-lSCopy=false
+lSCopy=true
 lClean=true
 
 FLAIRpath=flair
@@ -42,8 +42,8 @@ elif ${lCopy} ; then
     cp /mnt/san_data/soft/flair/INFN/flair-${flairVer}py3.tgz .
     cp /mnt/san_data/soft/flair/INFN/flair-geoviewer-${flairVer}py3.tgz .
 elif ${lSCopy} ; then
-    scp amereghe@192.168.1.100:/media/DATA/soft/flair-${flairVer}py3.tgz .
-    scp amereghe@192.168.1.100:/media/DATA/soft/flair-geoviewer-${flairVer}py3.tgz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/flair/INFN/flair-${flairVer}py3.tgz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/flair/INFN/flair-geoviewer-${flairVer}py3.tgz .
 fi    
 
 # create appropriate folder with downloaded material

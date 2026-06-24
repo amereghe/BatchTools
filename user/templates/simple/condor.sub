@@ -1,5 +1,9 @@
 universe = vanilla
 
+offset = 5
+plusProcess = $(ProcId)+$(offset)
+OffProcId = $INT(plusProcess)
+
 # executable must be in submission folder
 executable = job.sh
 # list of arguments to executable (empty is accepted)
@@ -18,14 +22,14 @@ when_to_transfer_output = ON_EXIT
 run_as_owner = TRUE
 
 log = htcondor_$(ClusterId).log
-output = htcondor_$(ClusterId)_$(ProcId).out
-error = htcondor_$(ClusterId)_$(ProcId).err
+output = htcondor_$(ClusterId)_$(OffProcId).out
+error = htcondor_$(ClusterId)_$(OffProcId).err
 
 request_cpus = 1
 request_disk = 200MB
 request_memory = 2GB
 
-JobBatchName = "test01"
+JobBatchName = "test_001_005_old"
 
 # submit 60 instances
-queue 60
+queue 5

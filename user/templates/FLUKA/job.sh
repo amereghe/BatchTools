@@ -1,9 +1,10 @@
 #!/bin/bash
 
-export FLUPRO=/usr/local/FLUKA/INFN/2024.1.3
+export FLUPRO=/usr/local/FLUKA/INFN/2025.1.2
 export FLUKA=${FLUPRO}
 export FLUFOR=gfortran
-FLUKAexe=/home/amereghe/Desktop/VirtualIrradiationFacility/FLUKAroutines/fluka.exe
+FLUKAexe=${FLUPRO}/flukahp
+inputFile=`ls -1 *.inp | tail -1`
 NN=0
 MM=1
 
@@ -11,17 +12,14 @@ MM=1
 echo " starting job at `date` in folder `pwd` as `whoami` on `hostname`..."
 
 # run
-for inputFile in `ls -1 *.inp` ; do
-    echo "running command: ${FLUKA}/flutil/rfluka -e ${FLUKAexe} -N${NN} -M${MM} ${inputFile%.inp}"
-    ${FLUKA}/flutil/rfluka -e ${FLUKAexe} -N${NN} -M${MM} ${inputFile%.inp}
-    echo ""
-    for ext in err out log ; do
-        echo "gzipping ${inputFile%.inp}???.${ext}..."
-        gzip ${inputFile%.inp}???.${ext}
-    done
-done
+echo "running command: ${FLUKA}/flutil/rfluka -e ${FLUKAexe} -N${NN} -M${MM} ${inputFile%.inp}"
+${FLUKA}/flutil/rfluka -e ${FLUKAexe} -N${NN} -M${MM} ${inputFile%.inp}
 
 # post-processing (modify this part according to your needs)
+for ext in err out log ; do
+    echo "gzipping ${inputFile%.inp}???.${ext}..."
+    gzip ${inputFile%.inp}???.${ext}
+done
 for iUnit in $(seq 21 22) ; do
     echo "gzipping fort.${iUnit} files..."
     gzip *fort.${iUnit}

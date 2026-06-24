@@ -2,18 +2,32 @@
 
 # run as root!
 
-lDownload=true
+lDownload=false
 lCopy=false
-lSCopy=false
+lSCopy=true
 lClean=true
 
 FLAIRpath=flair
-flairVer=2.3-0f
+flairVer=2.3-0g
 flairVerShort=`echo ${flairVer} | cut -d\- -f1`
 flairDist=INFN
 pathT2bins="/usr/local/bin"
 flairBins=( fcalc fless fm pt )
 flairExes=( Calculator.py ViewerPage.py Manual.py PeriodicTable.py )
+
+# check python and python-config exist
+if [ -z `which python` ] ; then
+    myPath=`which python3`
+    myPath=`dirname "${myPath}"`
+    echo "creating python link in ${myPath}..."
+    cd ${myPath} ; ln -s python3 python ; cd -
+fi
+if [ -z `which python-config` ] ; then
+    myPath=`which python3-config`
+    myPath=`dirname "${myPath}"`
+    echo "creating python-config link in ${myPath}..."
+    cd ${myPath} ; ln -s python3-config python-config ; cd -
+fi
 
 # go to suitable folder
 cd /usr/local
@@ -25,11 +39,11 @@ if ${lDownload} ; then
     wget --no-check-certificate https://www.fluka.eu/Fluka/www/htmls/flair/flair-${flairVer}py3.tgz
     wget --no-check-certificate https://www.fluka.eu/Fluka/www/htmls/flair/flair-geoviewer-${flairVer}py3.tgz
 elif ${lCopy} ; then
-    cp /media/DATA/soft/flair-${flairVer}py3.tgz .
-    cp /media/DATA/soft/flair-geoviewer-${flairVer}py3.tgz .
+    cp /mnt/san_data/soft/flair/INFN/flair-${flairVer}py3.tgz .
+    cp /mnt/san_data/soft/flair/INFN/flair-geoviewer-${flairVer}py3.tgz .
 elif ${lSCopy} ; then
-    scp amereghe@192.168.1.100:/media/DATA/soft/flair-${flairVer}py3.tgz .
-    scp amereghe@192.168.1.100:/media/DATA/soft/flair-geoviewer-${flairVer}py3.tgz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/flair/INFN/flair-${flairVer}py3.tgz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/flair/INFN/flair-geoviewer-${flairVer}py3.tgz .
 fi    
 
 # create appropriate folder with downloaded material
@@ -41,7 +55,9 @@ mv flair-geoviewer-${flairVerShort} flair-geoviewer-${flairVer}
 # compile geoviewer
 cd flair-geoviewer-${flairVer}
 make
-make install install-bin install-mime
+# make install-bin and install-mime do not exist!
+# make install install-bin install-mime
+make install
 cd -
 cd /usr/local/${FLAIRpath}
 mv *.geoviewer geoviewer.so usrbin2dvh fonts ${flairDist}/flair-${flairVer}
@@ -74,7 +90,8 @@ chown -R root:fluka ${FLAIRpath}
 cd -
 
 # clean away package files
-if [ ${lClean} ] ; then
+if ${lClean} ; then
+    echo "cleaning..."
     rm flair*${flairVer}*.tgz
     rm -rf flair-geoviewer-${flairVer}
 fi

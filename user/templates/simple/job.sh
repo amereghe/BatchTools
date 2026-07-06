@@ -4,7 +4,7 @@
 # this is a template batch job file
 
 # start batch job
-echo " starting job at `date` in folder $PWD as $USER on `hostname`..."
+echo " starting job at `date` in folder $PWD as $USER on `hostname` ..."
 
 # --------------------------------------
 # actual simulation job

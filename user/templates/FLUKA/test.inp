@@ -1,0 +1,37 @@
+* ..+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....
+TITLE
+simple FLUKA template .inp file: Bragg Peak of a 200MeV Proton pencil beam
+*
+DEFAULTS                                                              HADROTHE
+DELTARAY         -1.                         WATER
+*
+BEAM            -0.2                                                  PROTON
+BEAMPOS                            -10.0
+*
+GEOBEGIN                                                              COMBNAME
+    0    0              A simple water column
+*
+SPH BLK        0.0 0.0 0.0 50000.
+SPH VOID       0.0 0.0 0.0 10000.
+RCC WATCOLMN   0.0 0.0 0.0 0.0 0.0 40.0 10.0
+*
+END
+*
+BLACKH       5 +BLK  -VOID
+AIRAROUN     5 +VOID -WATCOLMN
+WATCOLMN     5 +WATCOLMN
+*
+END
+GEOEND
+*
+ASSIGNMA    BLCKHOLE    BLACKH
+ASSIGNMA      VACUUM  AIRAROUN
+ASSIGNMA       WATER  WATCOLMN
+*
+USRBIN          11.0      DOSE     -25.0      10.0       0.0      40.0DOSE
+USRBIN           0.0       0.0       0.0       1.0       1.0    4000.0&
+*
+* ..+....1....+....2....+....3....+....4....+....5....+....6....+....7....+....
+RANDOMIZ          1.        1.
+START     10000000.0
+STOP

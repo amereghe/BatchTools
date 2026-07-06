@@ -1,10 +1,16 @@
 #!/bin/bash
 
+# the script uses sshpass
+# sshpass can be installed on Ubuntu with:
+# $ sudo apt update
+# $ sudo apt install sshpass
+
 ExeFolder="${PWD}"
-myMachines="192.168.1.100 192.168.1.101 192.168.1.102 192.168.1.103"
+myMachines=(
+)
 makeCommand="
 cd ${ExeFolder}
-export FLUPRO=/usr/local/FLUKA/INFN/2024.1.3
+export FLUPRO=/usr/local/FLUKA/INFN/2025.1.4
 export FLUKA=${FLUPRO}
 export FLUFOR=gfortran
 make clean
@@ -13,17 +19,22 @@ make exe
 ls -ltrh --color=auto
 "
 
+# prompt for the password securely and store it in SSHPASS
+read -s -p "Enter the ssh password for all machines: " SSHPASS
+echo "" # just to add a newline after the invisible input
+export SSHPASS
+
 echo "preparing FLUKA exe(s)..."
-for myMachine in ${myMachines} ; do
+for myMachine in ${myMachines[@]} ; do
     echo "...machine: ${myMachine};"
     echo "...user: ${USER};"
     echo "...path: ${ExeFolder};"
     echo "   ...preparing folder (including cleaning existing files away)..."
-    ssh ${USER}@${myMachine} "rm -rf ${ExeFolder}; mkdir -p ${ExeFolder}"
+    sshpass -e ssh -o StrictHostKeyChecking=no ${USER}@${myMachine} "rm -rf ${ExeFolder}; mkdir -p ${ExeFolder}"
     echo "   ...scp-ing source files..."
-    scp -r ${ExeFolder}/* ${USER}@${myMachine}:${ExeFolder}
+    sshpass -e scp -r -o StrictHostKeyChecking=no ${ExeFolder}/* ${USER}@${myMachine}:${ExeFolder}
     echo "   ...actually compiling..."
-    ssh -t ${USER}@${myMachine} "${makeCommand}"
+    sshpass -e ssh -t -o StrictHostKeyChecking=no ${USER}@${myMachine} "${makeCommand}"
 done
 
 echo "...done."

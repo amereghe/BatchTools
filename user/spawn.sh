@@ -351,7 +351,7 @@ if ${lPrepare} ; then
     if [ -d ${caseDir} ] ; then
         echo " ...study folder ${caseDir} already exists! updating files..."
     else
-        mkdir ${caseDir}
+        mkdir -p ${caseDir}
     fi
     # copy files
     cd ${origDir}
@@ -393,7 +393,7 @@ if ${lPrepare} || ${lExpand} ; then
         # number of primaries
         sed -i "s/^START.*/START     `printf "%10.1f" "${nPrims}"`/g" ${dirNum}/${inputFile}
         if [ "${batchSys}" == "HMBS" ] ; then
-            currJobFile=job_${caseDir}_${dirNum}_`date "+%Y-%m-%d_%H-%M-%S"`.sh
+            currJobFile=job_${caseDir//\//_}_${dirNum}_`date "+%Y-%m-%d_%H-%M-%S"`.sh
             cat > ${dirNum}/${currJobFile} <<EOF
 #!/bin/bash
 cd ${PWD}/${caseDir}/${dirNum}
@@ -405,7 +405,7 @@ EOF
         fi
     done
     if [ "${batchSys}" == "HTC" ] ; then
-        sed -i "s/^JobBatchName.*/JobBatchName = \"${caseDir}\"/g" ${condorSubFile}
+        sed -i "s#^JobBatchName.*#JobBatchName = \"${caseDir}\"#g" ${condorSubFile}
         transfer_input_files="${inputFile}"
         for addFile in ${addFiles[@]} ; do
             transfer_input_files="${transfer_input_files},${addFile}"
@@ -425,7 +425,7 @@ if ${lSubmit} ; then
             echo " ...submitting seed ${iSeed}..."
             dirNum=`printf "${wherePST}" "${iSeed}"`
             if [ "${batchSys}" == "HMBS" ] ; then
-                currJobFile=`ls -1tr ${caseDir}/${dirNum}/job_${caseDir}_${dirNum}_*.sh | tail -1`
+                currJobFile=`ls -1tr ${caseDir}/${dirNum}/job_${caseDir//\//_}_${dirNum}_*.sh | tail -1`
                 mv ${currJobFile} ${spoolingPath}
             elif [ "${batchSys}" == "NONE" ] ; then
                 cd ${caseDir}/${dirNum}

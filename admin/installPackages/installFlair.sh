@@ -3,8 +3,8 @@
 # run as root!
 
 lDownload=false
-lCopy=false
-lSCopy=true
+lCopy=true
+lSCopy=false
 lClean=true
 
 FLAIRpath=flair
@@ -64,24 +64,20 @@ mv *.geoviewer geoviewer.so usrbin2dvh fonts ${flairDist}/flair-${flairVer}
 cd -
 
 # user binaries
-echo "regenerating ${pathT2bins}/flair ..."
-cat << EOF > ${pathT2bins}/flair
+echo "regenerating ${pathT2bins}/flair_INFN ..."
+cat << EOF > ${pathT2bins}/flair_INFN
 #!/usr/bin/sh
-flairDist=${flairDist}
-flairVer=${flairVer}
-"/usr/local/flair/\${flairDist}/flair-\${flairVer}/flair" \$*
+"/usr/local/flair/${flairDist}/flair-${flairVer}/flair" \$*
 EOF
-chmod +x ${pathT2bins}/flair
+chmod +x ${pathT2bins}/flair_INFN
 for (( ii=0; ii<${#flairBins[@]}; ii++ )) ; do
-    echo "regenerating ${pathT2bins}/${flairBins[${ii}]} ..."
-    cat << EOF > ${pathT2bins}/${flairBins[${ii}]}
+    echo "regenerating ${pathT2bins}/${flairBins[${ii}]}_INFN ..."
+    cat << EOF > ${pathT2bins}/${flairBins[${ii}]}_INFN
 #!/usr/bin/sh
-flairDist=${flairDist}
-flairVer=${flairVer}
-DIR="/usr/local/flair/\${flairDist}/flair-\${flairVer}"
+DIR="/usr/local/flair/${flairDist}/flair-${flairVer}"
 PYTHONPATH=\${DIR}/lib python3 \${DIR}/${flairExes[${ii}]} \$*
 EOF
-    chmod +x ${pathT2bins}/${flairBins[${ii}]}
+    chmod +x ${pathT2bins}/${flairBins[${ii}]}_INFN
 done
 
 # make installation available for the linux group fluka
@@ -98,3 +94,4 @@ fi
 
 # fix permissions
 chmod -R a+r /usr/local/${FLAIRpath}
+chown -R root:fluka /usr/local/bin

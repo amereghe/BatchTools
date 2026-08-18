@@ -39,6 +39,14 @@ mv flair-${flairVerShort} flair-${flairVer}
 mv flair-geoviewer-${flairVerShort} flair-geoviewer-${flairVer}
 
 # compile geoviewer
+#     compilation fails on Ubuntu 20.04 because of missing GL/gl.h 
+#     --> to find it:
+#     $ apt-file search "GL/gl.h"
+#     (for installation: apt install apt-file)
+#     (for updating package DB: apt-file update)
+#     libgl-dev: /usr/include/GL/gl.h           
+#     $ apt-get install libgl-dev
+#     $ apt-get install libogre-1.9-dev
 cd flair-geoviewer-${flairVer}
 make
 # make install-bin and install-mime do not exist!
@@ -81,12 +89,3 @@ fi
 # fix permissions
 chmod -R a+r /usr/local/${FLAIRpath}
 chown -R root:fluka /usr/local/bin
-
-# compilation fails on Ubuntu 20.04 because of missing GL/gl.h 
-# --> to find it:
-# $ apt-file search "GL/gl.h"
-# (for installation: apt install apt-file)
-# (for updating package DB: apt-file update)
-# libgl-dev: /usr/include/GL/gl.h           
-# $ apt-get install libgl-dev
-# $ apt-get install libogre-1.9-dev

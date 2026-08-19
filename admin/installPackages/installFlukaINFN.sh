@@ -10,14 +10,17 @@ GFORver=""
 GLIBCver=""
 # check your version against those available on the FLUKA website!
 #   choose the version on the web <= to yours
-# UBUNTU_24.04
-GFORver="${GFORver} 12.2"  # gfortran --version
-GLIBCver="${GLIBCver} 2.37" # ldd --version
-# UBUNTU_26.04
-GFORver="${GFORver} 15.2"  # gfortran --version
-GLIBCver="${GLIBCver} 2.42" # ldd --version
-iInstall=1
-lDownloadOnly=true
+# UBUNTU_20.04
+GFORver="${GFORver} 9.4"  # gfortran --version
+GLIBCver="${GLIBCver} 2.17" # ldd --version
+# # UBUNTU_24.04
+# GFORver="${GFORver} 12.2"  # gfortran --version
+# GLIBCver="${GLIBCver} 2.37" # ldd --version
+# # UBUNTU_26.04
+# GFORver="${GFORver} 15.2"  # gfortran --version
+# GLIBCver="${GLIBCver} 2.42" # ldd --version
+iInstall=0 # used for downloading many compiled versions of FLUKA but only one DB file
+lDownloadOnly=false
 lDownload=true
 lCopy=false
 lSCopy=false
@@ -65,7 +68,7 @@ if ${lDownloadOnly} ; then
     exit
 fi
 
-# create appropriate folder with downloaded material
+# untar material
 tar xvzf fluka${FLUKAver}-linux-gfor64bit-${GFORver[${iInstall}]}-glibc${GLIBCver[$iInstall]}-AA.tar.gz
 tar xvzf fluka${FLUKAver}-data.tar.gz
 

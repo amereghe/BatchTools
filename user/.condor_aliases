@@ -160,8 +160,8 @@ condor_get_fluka_eta() {
         
         # --- PROGRESS BAR LOGIC ---
         ((current_job++))
-        local plus_count=$(( (current_job * 20) / total_jobs ))
-        local dash_count=$(( 20 - plus_count ))
+        local plus_count=$(( (current_job * 40) / total_jobs ))
+        local dash_count=$(( 40 - plus_count ))
         local bar=""
         
         for ((i=0; i<plus_count; i++)); do bar+="+"; done
@@ -190,23 +190,26 @@ condor_get_fluka_eta() {
                 calc=$(awk -v c2="$col2" -v c4="$col4" 'BEGIN {
                     t_ms = c4 * 1000.0;
                     
-                    # 3a. Particles breakdown (G, M, k)
-                    g = int(c2 / 1000000000);
-                    rem = c2 % 1000000000;
-                    m_val = int(rem / 1000000);
-                    rem = rem % 1000000;
-                    k = int(rem / 1000);
-                    
-                    # Dynamically build string (drops leading 0s, keeps trailing 0s)
-                    if (g > 0) {
-                        p_fmt = sprintf("%3dG %3dM %3dk", g, m_val, k);
-                    } else if (m_val > 0) {
-                        p_fmt = sprintf("%3dM %3dk", m_val, k);
+                    # 3a. Particles breakdown
+                    if (c2 >= 1000000000) {
+                        p_val = c2 / 1000000000.0;
+                        p_unit = "G";
+                    } else if (c2 >= 1000000) {
+                        p_val = c2 / 1000000.0;
+                        p_unit = "M";
                     } else {
-                        p_fmt = sprintf("%3dk", k);
+                        p_val = c2 / 1000.0;
+                        p_unit = "k";
                     }
                     
-                    # 3b. ETA breakdown
+                    p_fmt = sprintf("%.3f", p_val);
+                    if (index(p_fmt, ".") > 0) {
+                        sub(/0+$/, "", p_fmt);
+                        sub(/\.$/, "", p_fmt);
+                    }
+                    p_fmt = p_fmt p_unit;
+                    
+                    # 3b. ETA breakdown (Couples of numbers)
                     tot_s = int(c2 * c4);
                     d = int(tot_s / 86400);
                     tot_s = tot_s % 86400;
@@ -215,15 +218,14 @@ condor_get_fluka_eta() {
                     m_time = int(tot_s / 60);
                     s = int(tot_s % 60);
                     
-                    # Dynamically build string (drops leading 0s, keeps trailing 0s)
+                    # Pick only the 2 most significant units
                     if (d > 0) {
-                        eta_fmt = sprintf("%3dd %2dh %2dm %2ds", d, h, m_time, s);
+                        eta_fmt = sprintf("%3dd %2dh", d, h);
                     } else if (h > 0) {
-                        eta_fmt = sprintf("%3dh %2dm %2ds", h, m_time, s);
-                    } else if (m_time > 0) {
-                        eta_fmt = sprintf("%3dm %2ds", m_time, s);
+                        eta_fmt = sprintf("%3dh %2dm", h, m_time);
                     } else {
-                        eta_fmt = sprintf("%3ds", s);
+                        # Handles anything under an hour (minutes and seconds)
+                        eta_fmt = sprintf("%3dm %2ds", m_time, s);
                     }
                     
                     printf "%.2f\t%s\t%s\n", t_ms, p_fmt, eta_fmt;
@@ -242,9 +244,9 @@ condor_get_fluka_eta() {
     
     # 4. Print headers and formatted/sorted table
     printf "%b\n" "$results" | sort -t$'\t' -k1,1 -k3,3n | awk -F'\t' 'BEGIN {
-        fmt = "%-18s %-12s %-14s %16s %18s\n";
-        printf fmt, "MACHINE", "JOB ID", "TIME/PRIM (ms)", "REMAIN PARTS", "ETA";
-        printf fmt, "------------------", "------------", "--------------", "----------------", "------------------";
+        fmt = "%-12s %-6s %14s %12s %8s\n";
+        printf fmt, "MACHINE NAME", "JOB ID", "TIME/PRIM (ms)", "REMAIN PARTS", "ETA";
+        printf fmt, "------------", "------", "--------------", "------------", "--------";
     }
     NF>=5 {
         disp_mach = ($1 == prev_mach) ? "" : $1;

@@ -88,4 +88,5 @@ fi
 
 # fix permissions
 chmod -R a+r /usr/local/${FLAIRpath}
+chmod -R o-rx /usr/local/${FLAIRpath}
 chown -R root:fluka /usr/local/bin

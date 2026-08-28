@@ -36,6 +36,8 @@ make
 cd -
 
 # make installation available for the linux group fluka
+chmod -R a+r .
+chmod -R o-rx .
 cd ../../../
 chown -R root:fluka FLUKA
 cd -

@@ -82,6 +82,7 @@ make ; $FLUPRO/flutil/ldpmqmd
 
 # make installation available for the linux group fluka
 chmod -R a+r .
+chmod -R o-rx .
 find . -type f -executable -exec chmod a+x {} \;
 find . -type d -exec chmod g+x {} \;
 cd ../../../

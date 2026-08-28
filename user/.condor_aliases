@@ -1,0 +1,324 @@
+#!/bin/bash
+
+condor_nodes() {
+    condor_status -constraint 'SlotType =!= "Dynamic"' \
+                  -af Name State Activity OpSysAndVer GPUs TotalGPUs CPUs TotalCpus Memory TotalMemory Disk TotalDisk | \
+        awk 'BEGIN {
+            print "Name State Activity OpSys GPUs TotalGPUs CPUs TotalCPUs Mem[GB] TotalMem[GB] Disk[GB] TotalDisk[GB]"
+            } {
+            printf "%s %s %s %s %s %s %s %.0f %.1f %.1f %.1f %.1f\n",
+             $1, $2, $3, $4, $5, $6, $7, $8, $9/1024, $10/1024, $11/1024^2, $12/1024^2
+            }' | column -t
+}
+
+condor_running() {
+    condor_q -constraint 'JobStatus == 2' -af:t RemoteHost JobBatchName ClusterId ProcId \
+    | awk -F'\t' -v OFS='\t' '{gsub(/.*@/, "", $1); print $1, $2, $3, $4}' \
+    | sort -t$'\t' -k1,1 -k2,2 -k3,3n -k4,4n \
+    | awk -F'\t' 'BEGIN {
+        # Define header strings
+        hdr_m = "MACHINE";
+        hdr_b = "BATCH NAME";
+        hdr_t = "TOTAL JOBS";
+        hdr_c = "CLUSTER ID";
+        hdr_j = "JOB IDs";
+        
+        # Initialize minimum widths dynamically from header lengths
+        w_m = length(hdr_m);
+        w_b = length(hdr_b);
+        w_t = length(hdr_t);
+        w_c = length(hdr_c);
+        w_j = length(hdr_j);
+        
+        n = 0;
+        line_count = 0;
+    }
+    function add_line(m, b, t, c, j_str) {
+        line_count++;
+        out_m[line_count] = m;
+        out_b[line_count] = b;
+        out_t[line_count] = t;
+        out_c[line_count] = c;
+        out_j[line_count] = j_str;
+    
+        if (length(m) > w_m) w_m = length(m);
+        if (length(b) > w_b) w_b = length(b);
+        if (length(t "") > w_t) w_t = length(t "");
+        if (length(c "") > w_c) w_c = length(c "");
+        if (length(j_str) > w_j) w_j = length(j_str);
+    }
+    function print_group() {
+        if (n > 0) {
+            # Group consecutive Job IDs (Fixed logic for couples)
+            res = ""; start = jobs[1]; prev = jobs[1];
+            for (i = 2; i <= n; i++) {
+                if (jobs[i] == prev + 1) {
+                    prev = jobs[i];
+                } else {
+                    chunk = (start == prev) ? start : ((prev == start + 1) ? start "," prev : start "-" prev);
+                    res = res (res == "" ? "" : ",") chunk;
+                    start = jobs[i]; prev = jobs[i];
+                }
+            }
+            chunk = (start == prev) ? start : ((prev == start + 1) ? start "," prev : start "-" prev);
+            res = res (res == "" ? "" : ",") chunk;
+            
+            # Prepare variables for the first line
+            disp_mach = (grp_mach == printed_mach) ? "" : grp_mach;
+            disp_batch = (grp_mach == printed_mach && grp_batch == printed_batch) ? "" : grp_batch;
+            disp_total = n;
+            disp_clust = grp_clust;
+            
+            # Wrap Job IDs exceeding 40 characters
+            num_items = split(res, arr, ",");
+            curr_str = arr[1];
+            
+            for (j = 2; j <= num_items; j++) {
+                if (length(curr_str "," arr[j]) > 40) {
+                    add_line(disp_mach, disp_batch, disp_total, disp_clust, curr_str ",");
+                    disp_mach = ""; disp_batch = ""; disp_total = ""; disp_clust = "";
+                    curr_str = arr[j];
+                } else {
+                    curr_str = curr_str "," arr[j];
+                }
+            }
+            add_line(disp_mach, disp_batch, disp_total, disp_clust, curr_str);
+            
+            printed_mach = grp_mach;
+            printed_batch = grp_batch;
+        }
+    }
+    {
+        if (n == 0) {
+            grp_mach = $1; grp_batch = $2; grp_clust = $3;
+            jobs[++n] = $4;
+        } else if ($1 == grp_mach && $2 == grp_batch && $3 == grp_clust) {
+            jobs[++n] = $4;
+        } else {
+            print_group();
+            grp_mach = $1; grp_batch = $2; grp_clust = $3;
+            n = 1; jobs[1] = $4;
+        }
+    }
+    END {
+        print_group();
+        
+        # Build the dynamic format string
+        fmt = "%-" w_m "s  %-" w_b "s  %-" w_t "s  %-" w_c "s  %s\n";
+        
+        # Generate dynamic dashed rulers
+        dash_m = ""; for(i=1; i<=w_m; i++) dash_m = dash_m "-";
+        dash_b = ""; for(i=1; i<=w_b; i++) dash_b = dash_b "-";
+        dash_t = ""; for(i=1; i<=w_t; i++) dash_t = dash_t "-";
+        dash_c = ""; for(i=1; i<=w_c; i++) dash_c = dash_c "-";
+        dash_j = ""; for(i=1; i<=w_j; i++) dash_j = dash_j "-";
+        
+        # Print headers and rulers
+        printf fmt, hdr_m, hdr_b, hdr_t, hdr_c, hdr_j;
+        printf fmt, dash_m, dash_b, dash_t, dash_c, dash_j;
+        
+        # Output all dynamically aligned lines
+        for (i = 1; i <= line_count; i++) {
+            printf fmt, out_m[i], out_b[i], out_t[i], out_c[i], out_j[i];
+        }
+    }'
+}
+
+condor_get_fluka_eta() {
+    local cluster_id="$1"
+    
+    if [[ -z "$cluster_id" ]]; then
+        echo "Usage: get_fluka_eta <ClusterID>"
+        return 1
+    fi
+
+    # 1. Fetch running jobs: ProcId, RemoteHost, JobBatchName
+    local jobs_info
+    jobs_info=$(condor_q -constraint "ClusterId == $cluster_id && JobStatus == 2" -af:t ProcId RemoteHost JobBatchName)
+
+    if [[ -z "$jobs_info" ]]; then
+        echo "No running jobs found for Cluster ID: $cluster_id"
+        return 0
+    fi
+
+    # Calculate total jobs for the progress bar
+    local total_jobs
+    total_jobs=$(wc -l <<< "$jobs_info")
+    local current_job=0
+
+    echo "Querying $total_jobs running jobs for Cluster ID: $cluster_id..."
+
+    # Extract the batch name from the very first job matched
+    local batch_name
+    batch_name=$(echo "$jobs_info" | head -n 1 | awk -F'\t' '{print $3}')
+
+    local results=""
+    
+    # 2. Iterate sequentially through each job
+    while IFS=$'\t' read -r proc host batch; do
+        [[ -z "$proc" ]] && continue
+        
+        # --- PROGRESS BAR LOGIC ---
+        ((current_job++))
+        local plus_count=$(( (current_job * 40) / total_jobs ))
+        local dash_count=$(( 40 - plus_count ))
+        local bar=""
+        
+        for ((i=0; i<plus_count; i++)); do bar+="+"; done
+        for ((i=0; i<dash_count; i++)); do bar+="-"; done
+        
+        printf "\r%d / %d [%s]" "$current_job" "$total_jobs" "$bar"
+        # --------------------------
+
+        local node="${host#*@}"
+        local job_id="${cluster_id}.${proc}"
+        
+        local ssh_out
+        ssh_out=$(condor_ssh_to_job "$job_id" "grep -B1 'NEXT SEEDS' fluka_*/*.out 2>/dev/null | tail -2 | head -1" </dev/null 2>/dev/null)
+        
+        local t_ms="N/A"
+        local p_str="N/A"
+        local eta="N/A"
+        
+        if [[ -n "$ssh_out" ]]; then
+            local col2=$(echo "$ssh_out" | awk '{print $2}')
+            local col4=$(echo "$ssh_out" | awk '{print $4}')
+            
+            if [[ -n "$col2" && -n "$col4" ]]; then
+                # 3. Use awk for math and dynamic formatting
+                local calc
+                calc=$(awk -v c2="$col2" -v c4="$col4" 'BEGIN {
+                    t_ms = c4 * 1000.0;
+                    
+                    # 3a. Particles breakdown
+                    if (c2 >= 1000000000) {
+                        p_val = c2 / 1000000000.0;
+                        p_unit = "G";
+                    } else if (c2 >= 1000000) {
+                        p_val = c2 / 1000000.0;
+                        p_unit = "M";
+                    } else {
+                        p_val = c2 / 1000.0;
+                        p_unit = "k";
+                    }
+                    
+                    p_fmt = sprintf("%.3f", p_val);
+                    if (index(p_fmt, ".") > 0) {
+                        sub(/0+$/, "", p_fmt);
+                        sub(/\.$/, "", p_fmt);
+                    }
+                    p_fmt = p_fmt p_unit;
+                    
+                    # 3b. ETA breakdown (Couples of numbers)
+                    tot_s = int(c2 * c4);
+                    d = int(tot_s / 86400);
+                    tot_s = tot_s % 86400;
+                    h = int(tot_s / 3600);
+                    tot_s = tot_s % 3600;
+                    m_time = int(tot_s / 60);
+                    s = int(tot_s % 60);
+                    
+                    # Pick only the 2 most significant units
+                    if (d > 0) {
+                        eta_fmt = sprintf("%3dd %2dh", d, h);
+                    } else if (h > 0) {
+                        eta_fmt = sprintf("%3dh %2dm", h, m_time);
+                    } else {
+                        # Handles anything under an hour (minutes and seconds)
+                        eta_fmt = sprintf("%3dm %2ds", m_time, s);
+                    }
+                    
+                    printf "%.2f\t%s\t%s\n", t_ms, p_fmt, eta_fmt;
+                }')
+                
+                IFS=$'\t' read -r t_ms p_str eta <<< "$calc"
+            fi
+        fi
+        
+        results+="${node}\t${job_id}\t${t_ms}\t${p_str}\t${eta}\n"
+    done <<< "$jobs_info"
+
+    echo -e "\n\nCLUSTER ID : $cluster_id"
+    echo "BATCH NAME : $batch_name"
+    echo ""
+    
+    # 4. Print headers and formatted/sorted table
+    printf "%b\n" "$results" | sort -t$'\t' -k1,1 -k3,3n | awk -F'\t' 'BEGIN {
+        fmt = "%-12s %-6s %14s %12s %8s\n";
+        printf fmt, "MACHINE NAME", "JOB ID", "TIME/PRIM (ms)", "REMAIN PARTS", "ETA";
+        printf fmt, "------------", "------", "--------------", "------------", "--------";
+    }
+    NF>=5 {
+        disp_mach = ($1 == prev_mach) ? "" : $1;
+        printf fmt, disp_mach, $2, $3, $4, $5;
+        prev_mach = $1;
+    }'
+}
+
+condor_stop_fluka_jobs() {
+    local target="$1"
+
+    if [[ -z "$target" ]]; then
+        echo "Usage: stop_fluka_jobs <ClusterID> OR stop_fluka_jobs <ClusterID>.<JobID>"
+        echo "Example (Single):  stop_fluka_jobs 1234.5"
+        echo "Example (Cluster): stop_fluka_jobs 1234"
+        return 1
+    fi
+
+    # The payload executed on the remote machine: 
+    # 1. Finds the newest fluka_* folder.
+    # 2. Checks if it found one.
+    # 3. Touches rfluka.stop inside it.
+    local ssh_cmd='d=$(ls -td fluka_* 2>/dev/null | head -1); [ -n "$d" ] && touch "$d/rfluka.stop"'
+
+    if [[ "$target" == *.* ]]; then
+        echo "Sending stop signal to specific FLUKA job: $target..."
+        
+        if condor_ssh_to_job "$target" "$ssh_cmd" </dev/null >/dev/null 2>&1; then
+            echo "Successfully sent stop signal to $target."
+        else
+            echo "Failed to connect to $target. (Is the job currently running?)"
+        fi
+        
+    else
+        # Target is a whole Cluster ID. Query for all running jobs first.
+        local jobs_info
+        jobs_info=$(condor_q -constraint "ClusterId == $target && JobStatus == 2" -af:t ProcId JobBatchName)
+
+        if [[ -z "$jobs_info" ]]; then
+            echo "No running jobs found for Cluster ID: $target."
+            return 0
+        fi
+        
+        # Extract the batch name from the very first job matched
+        local batch_name
+        batch_name=$(echo "$jobs_info" | head -n 1 | awk -F'\t' '{print $2}')
+        
+        # Print the requested header with the extracted batch name
+        echo "Querying running jobs for Cluster ID $target - aka $batch_name ..."
+        
+        local total_jobs
+        total_jobs=$(wc -l <<< "$jobs_info")
+        echo "Found $total_jobs running jobs. Sending stop signals..."
+
+        local current_job=0
+        
+        # Loop through each running job
+        while IFS=$'\t' read -r proc batch; do
+            [[ -z "$proc" ]] && continue
+            
+            ((current_job++))
+            local job_id="${target}.${proc}"
+            
+            # Print the current status, overwriting the same line
+            printf "\rStopping job %d / %d (aka %s) ..." "$current_job" "$total_jobs" "$job_id"
+            
+            # SSH in and execute our remote command. Output is muted.
+            condor_ssh_to_job "$job_id" "$ssh_cmd" </dev/null >/dev/null 2>&1
+            
+        done <<< "$jobs_info"
+        
+        # Move to a new line after the loop finishes
+        echo -e "\nDone! Touched rfluka.stop for $total_jobs jobs in Cluster $target."
+    fi
+}

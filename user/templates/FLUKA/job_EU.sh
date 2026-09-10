@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export FLUPRO=/usr/local/FLUKA/INFN/2025.1.4
+export FLUPRO=/usr/local/FLUKA/EU/2025.1.4
 export FLUKA=${FLUPRO}
 export FLUFOR=gfortran
 FLUKAexe=${FLUPRO}/flukahp

@@ -4,6 +4,7 @@
 
 # set env vars
 credFileName="myCredentials.sh" # contains myUserID and myUserPass vars (necessary only for download)
+FLUKAdist=EU
 FLUKAverLong=2025.1.4
 FLUKAver=`echo ${FLUKAverLong} | cut -d\. -f1,2`
 GFORver=""
@@ -25,7 +26,7 @@ lDownload=true
 lCopy=false
 lSCopy=false
 lClean=false
-FLUKApath=FLUKA/INFN
+FLUKApath=FLUKA/${FLUKAdist}
 #
 GFORver=( ${GFORver} )
 GLIBCver=( ${GLIBCver} )
@@ -58,11 +59,11 @@ if ${lDownload} ; then
     wget --user ${myUserID} --password ${myUserPass} --no-check-certificate https://www.fluka.eu/Fluka/www/htmls/packages/fluka${FLUKAver}-data.tar.gz
 elif ${lCopy} ; then
     echo "copying files..."
-    cp /mnt/san_data/soft/FLUKA/INFN/${FLUKAverLong}/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz .
-    cp /mnt/san_data/soft/FLUKA/INFN/${FLUKAverLong}/fluka${FLUKAver}-data.tar.gz .
+    cp /mnt/san_data/soft/FLUKA/${FLUKAdist}/${FLUKAverLong}/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz .
+    cp /mnt/san_data/soft/FLUKA/${FLUKAdist}/${FLUKAverLong}/fluka${FLUKAver}-data.tar.gz .
 elif ${lSCopy} ; then
-    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/FLUKA/INFN/${FLUKAverLong}/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz .
-    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/FLUKA/INFN/${FLUKAverLong}/fluka${FLUKAver}-data.tar.gz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/FLUKA/${FLUKAdist}/${FLUKAverLong}/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/FLUKA/${FLUKAdist}/${FLUKAverLong}/fluka${FLUKAver}-data.tar.gz .
 fi
 if ${lDownloadOnly} ; then
     exit

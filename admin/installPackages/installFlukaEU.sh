@@ -59,11 +59,11 @@ if ${lDownload} ; then
     wget --user ${myUserID} --password ${myUserPass} --no-check-certificate https://www.fluka.eu/Fluka/www/htmls/packages/fluka${FLUKAver}-data.tar.gz
 elif ${lCopy} ; then
     echo "copying files..."
-    cp /mnt/san_data/soft/FLUKA_${FLUKAdist}/${FLUKAverLong}/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz .
-    cp /mnt/san_data/soft/FLUKA_${FLUKAdist}/${FLUKAverLong}/fluka${FLUKAver}-data.tar.gz .
+    cp /mnt/san_data/soft/FLUKA/${FLUKAdist}/${FLUKAverLong}/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz .
+    cp /mnt/san_data/soft/FLUKA/${FLUKAdist}/${FLUKAverLong}/fluka${FLUKAver}-data.tar.gz .
 elif ${lSCopy} ; then
-    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/FLUKA_${FLUKAdist}/${FLUKAverLong}/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz .
-    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/FLUKA_${FLUKAdist}/${FLUKAverLong}/fluka${FLUKAver}-data.tar.gz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/FLUKA/${FLUKAdist}/${FLUKAverLong}/fluka${FLUKAver}-linux-gfor64bit-${GFORver}-glibc${GLIBCver}-AA.tar.gz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/FLUKA/${FLUKAdist}/${FLUKAverLong}/fluka${FLUKAver}-data.tar.gz .
 fi
 if ${lDownloadOnly} ; then
     exit

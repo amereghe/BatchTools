@@ -20,10 +20,10 @@ cd ${FLUKApath}/${FLUKAverLong}
 
 if ${lCopy} ; then
     echo "copying files..."
-    cp /mnt/san_data/soft/FLUKA_CERN/fluka-${FLUKAverLong}.x86-Linux-gfor9.tgz .
+    cp /mnt/san_data/soft/FLUKA/CERN/fluka-${FLUKAverLong}.x86-Linux-gfor9.tgz .
 elif ${lSCopy} ; then
     echo "scopying files..."
-    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/FLUKA_CERN/fluka-${FLUKAverLong}.x86-Linux-gfor9.tgz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/FLUKA/CERN/fluka-${FLUKAverLong}.x86-Linux-gfor9.tgz .
 fi
 
 # untar material

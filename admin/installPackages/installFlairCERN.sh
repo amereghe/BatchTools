@@ -25,11 +25,11 @@ if ${lDownload} ; then
     wget --no-check-certificate https://flair.cern/download/flair-${flairVer}.tgz
     wget --no-check-certificate https://flair.cern/download/flair-geoviewer-${flairVer}.tgz
 elif ${lCopy} ; then
-    cp /mnt/san_data/soft/flair_CERN/flair-${flairVer}.tgz .
-    cp /mnt/san_data/soft/flair_CERN/flair-geoviewer-${flairVer}.tgz .
+    cp /mnt/san_data/soft/flair/CERN/flair-${flairVer}.tgz .
+    cp /mnt/san_data/soft/flair/CERN/flair-geoviewer-${flairVer}.tgz .
 elif ${lSCopy} ; then
-    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/flair_CERN/flair-${flairVer}.tgz .
-    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/flair_CERN/flair-geoviewer-${flairVer}.tgz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/flair/CERN/flair-${flairVer}.tgz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/flair/CERN/flair-geoviewer-${flairVer}.tgz .
 fi
 
 # create appropriate folder with downloaded material

@@ -39,11 +39,11 @@ if ${lDownload} ; then
     wget --no-check-certificate https://www.fluka.eu/Fluka/www/htmls/flair/flair-${flairVer}py3.tgz
     wget --no-check-certificate https://www.fluka.eu/Fluka/www/htmls/flair/flair-geoviewer-${flairVer}py3.tgz
 elif ${lCopy} ; then
-    cp /mnt/san_data/soft/flair_${flairDist}/flair-${flairVer}py3.tgz .
-    cp /mnt/san_data/soft/flair_${flairDist}/flair-geoviewer-${flairVer}py3.tgz .
+    cp /mnt/san_data/soft/flair/${flairDist}/flair-${flairVer}py3.tgz .
+    cp /mnt/san_data/soft/flair/${flairDist}/flair-geoviewer-${flairVer}py3.tgz .
 elif ${lSCopy} ; then
-    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/flair_${flairDist}/flair-${flairVer}py3.tgz .
-    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/flair_${flairDist}/flair-geoviewer-${flairVer}py3.tgz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/flair/${flairDist}/flair-${flairVer}py3.tgz .
+    scp amereghe@svpvclus01.cnao.group:/mnt/san_data/soft/flair/${flairDist}/flair-geoviewer-${flairVer}py3.tgz .
 fi    
 
 # create appropriate folder with downloaded material

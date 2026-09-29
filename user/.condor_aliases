@@ -323,7 +323,7 @@ condor_stop_fluka_jobs() {
     fi
 }
 
-parse_condor_logs() {
+condor_parse_logs() {
     if [[ $# -eq 0 ]]; then
         echo "Usage: parse_condor_logs <log_file1> [<log_file2> ...]"
         return 1

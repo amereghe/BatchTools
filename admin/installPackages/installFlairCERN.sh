@@ -72,6 +72,7 @@ DIR="/usr/local/flair/${flairDist}/flair-${flairVer}"
 PYTHONPATH=\${DIR}/lib python3 \${DIR}/${flairExes[${ii}]} \$*
 EOF
     chmod +x ${pathT2bins}/${flairBins[${ii}]}_CERN
+    chown -R root:fluka ${pathT2bins}/${flairBins[${ii}]}_CERN
 done
 
 # make installation available for the linux group fluka
@@ -89,4 +90,3 @@ fi
 # fix permissions
 chmod -R a+r /usr/local/${FLAIRpath}
 chmod -R o-rx /usr/local/${FLAIRpath}
-chown -R root:fluka /usr/local/bin

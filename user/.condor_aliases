@@ -322,3 +322,150 @@ condor_stop_fluka_jobs() {
         echo -e "\nDone! Touched rfluka.stop for $total_jobs jobs in Cluster $target."
     fi
 }
+
+parse_condor_logs() {
+    if [[ $# -eq 0 ]]; then
+        echo "Usage: parse_condor_logs <log_file1> [<log_file2> ...]"
+        return 1
+    fi
+    
+    # Pass files directly to awk
+    awk '
+    # Safely match HTCondor event headers
+    /^[0-9][0-9][0-9] \(/ {
+        curr_job = FILENAME "_" $2
+    }
+    
+    # Extract Machine Name
+    $1 == "SlotName:" {
+        mach_name = $2
+        sub(/.*@/, "", mach_name)
+        machine[curr_job] = mach_name
+    }
+    
+    # Extract Disk (KB)
+    $1 == "Disk" && $2 == "(KB)" {
+        disk_u[curr_job] = $4 + 0
+        disk_r[curr_job] = $5 + 0
+    }
+    
+    # Extract Memory (MB)
+    $1 == "Memory" && $2 == "(MB)" {
+        mem_u[curr_job] = $4 + 0
+        mem_r[curr_job] = $5 + 0
+    }
+    
+    # Extract Execute Time (s)
+    $1 == "TimeExecute" && $2 == "(s)" {
+        time_e[curr_job] = $4 + 0
+    }
+    
+    # Function to format time safely 
+    function format_time(val,   tot_s, d_time, h_time, m_time, s_time) {
+        if (val == "") return "N/A"
+        tot_s = int(val)
+        d_time = int(tot_s / 86400); tot_s = tot_s % 86400
+        h_time = int(tot_s / 3600);  tot_s = tot_s % 3600
+        m_time = int(tot_s / 60);    s_time = int(tot_s % 60)
+        
+        if (d_time > 0) return sprintf("%2dd %2dh", d_time, h_time)
+        else if (h_time > 0) return sprintf("%2dh %2dm", h_time, m_time)
+        else return sprintf("%2dm %2ds", m_time, s_time)
+    }
+    
+    END {
+        # Aggregate Min/Max values and count jobs per machine
+        for (j in machine) {
+            mach = machine[j]
+            seen_mach[mach] = 1
+            mach_jobs[mach]++
+            
+            # Process Disk
+            if (j in disk_u) {
+                if (!(mach in has_disk)) {
+                    has_disk[mach] = 1
+                    min_du[mach] = disk_u[j]; max_du[mach] = disk_u[j]; req_d[mach] = disk_r[j]
+                } else {
+                    if (disk_u[j] < min_du[mach]) min_du[mach] = disk_u[j]
+                    if (disk_u[j] > max_du[mach]) max_du[mach] = disk_u[j]
+                }
+            }
+            
+            # Process Memory
+            if (j in mem_u) {
+                if (!(mach in has_mem)) {
+                    has_mem[mach] = 1
+                    min_mu[mach] = mem_u[j]; max_mu[mach] = mem_u[j]; req_m[mach] = mem_r[j]
+                } else {
+                    if (mem_u[j] < min_mu[mach]) min_mu[mach] = mem_u[j]
+                    if (mem_u[j] > max_mu[mach]) max_mu[mach] = mem_u[j]
+                }
+            }
+            
+            # Process Time
+            if (j in time_e) {
+                if (!(mach in has_time)) {
+                    has_time[mach] = 1
+                    min_te[mach] = time_e[j]; max_te[mach] = time_e[j]
+                } else {
+                    if (time_e[j] < min_te[mach]) min_te[mach] = time_e[j]
+                    if (time_e[j] > max_te[mach]) max_te[mach] = time_e[j]
+                }
+            }
+        }
+        
+        # Format strings for final output
+        for (mach in seen_mach) {
+            j_count = mach_jobs[mach]
+            
+            # Format Disk string
+            if (mach in has_disk) {
+                d_min = min_du[mach]/1048576.0
+                d_max = max_du[mach]/1048576.0
+                d_req = req_d[mach]/1048576.0
+                
+                if (j_count == 1) {
+                    d_str = sprintf("%5.2f (%5.2f) GB", d_min, d_req)
+                } else {
+                    d_str = sprintf("%5.2f / %5.2f (%.2f) GB", d_min, d_max, d_req)
+                }
+            } else {
+                d_str = "N/A"
+            }
+            
+            # Format Memory string
+            if (mach in has_mem) {
+                if (j_count == 1) {
+                    m_str = sprintf("%5d (%5d) MB", min_mu[mach], req_m[mach])
+                } else {
+                    m_str = sprintf("%5d / %d (%5d) MB", min_mu[mach], max_mu[mach], req_m[mach])
+                }
+            } else {
+                m_str = "N/A"
+            }
+            
+            # Format Time string
+            if (mach in has_time) {
+                if (j_count == 1) {
+                    t_str = sprintf("%7s", format_time(min_te[mach]))
+                } else {
+                    t_str = sprintf("%7s / %7s", format_time(min_te[mach]), format_time(max_te[mach]))
+                }
+            } else {
+                t_str = "N/A"
+            }
+            
+            # Output tab-separated rows for bash to sort
+            printf "%s\t%d\t%s\t%s\t%s\n", mach, j_count, d_str, m_str, t_str
+        }
+    }
+    ' "$@" | sort -t$'\t' -k1,1 | awk -F'\t' 'BEGIN {
+        # Format the sorted data into a cleanly aligned table
+        fmt = "%-18s %6s %28s %26s %22s\n"
+        printf fmt, "MACHINE", "JOBS", "DISK [Min/Max (Req)]", "MEM [Min/Max (Req)]", "TIME [Min/Max]"
+        printf fmt, "------------------", "------", "----------------------------", "--------------------------", "----------------------"
+    }
+    {
+        printf fmt, $1, $2, $3, $4, $5
+    }'
+}

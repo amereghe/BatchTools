@@ -244,9 +244,9 @@ condor_get_fluka_eta() {
     
     # 4. Print headers and formatted/sorted table
     printf "%b\n" "$results" | sort -t$'\t' -k1,1 -k3,3n | awk -F'\t' 'BEGIN {
-        fmt = "%-12s %-6s %14s %12s %8s\n";
+        fmt = "%-12s %-7s %14s %12s %8s\n";
         printf fmt, "MACHINE NAME", "JOB ID", "TIME/PRIM (ms)", "REMAIN PARTS", "ETA";
-        printf fmt, "------------", "------", "--------------", "------------", "--------";
+        printf fmt, "------------", "-------", "--------------", "------------", "--------";
     }
     NF>=5 {
         disp_mach = ($1 == prev_mach) ? "" : $1;
